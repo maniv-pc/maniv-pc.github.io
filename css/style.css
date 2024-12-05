@@ -1,84 +1,114 @@
-/* צבעי רקע וטיפוגרפיה כללית */
+/* כיווניות ימין לשמאל */
 body {
   direction: rtl;
-  font-family: 'Arial', sans-serif;
-  background-color: #eef2f5;
+  font-family: Arial, sans-serif;
+  background-color: navy;
+  color: white;
   margin: 0;
   padding: 0;
-  color: #333;
 }
 
 /* כותרות */
-h1, h2 {
-  text-align: center;
+h1, h2, h3 {
   color: #1e90ff;
-  margin: 20px 0;
+  text-align: center;
 }
 
-h2 {
-  font-size: 1.8em;
-  border-bottom: 2px solid #1e90ff;
-  display: inline-block;
-  padding-bottom: 5px;
-}
-
-/* עיצוב גלריה */
-.gallery {
-  max-width: 1200px;
-  margin: 0 auto;
+/* עיצוב התפריט */
+header {
+  background-color: #001f3f;
   padding: 20px;
+  text-align: center;
+}
+
+header nav a {
+  color: white;
+  margin: 0 15px;
+  text-decoration: none;
+  font-weight: bold;
+}
+
+header nav a:hover {
+  text-decoration: underline;
+}
+
+/* עיצוב גלריה אופקית */
+.gallery {
+  padding: 20px;
+  background-color: #003366;
 }
 
 .gallery-container {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+  overflow-x: auto;
   gap: 20px;
-  justify-content: center;
+  justify-content: space-evenly;
+  padding: 10px 0;
 }
 
 .gallery-item {
-  position: relative;
-  width: 300px;
+  text-align: center;
+  width: 250px;
   border-radius: 8px;
   overflow: hidden;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
-}
-
-.gallery-item:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
 }
 
 .gallery-item img {
   width: 100%;
   height: auto;
-  display: block;
+  border-radius: 8px;
 }
 
-.caption {
-  position: absolute;
-  bottom: 0;
-  background: rgba(30, 144, 255, 0.8);
-  color: white;
-  width: 100%;
-  text-align: center;
-  padding: 10px;
-  font-size: 1.1em;
-  font-weight: bold;
+.gallery-item h3 {
+  margin-top: 10px;
+  font-size: 1.2em;
+  color: #add8e6;
 }
 
-/* עיצוב ללוגו */
-.logo {
-  display: block;
+/* טופס יצירת קשר */
+form {
+  display: flex;
+  flex-direction: column;
+  max-width: 400px;
   margin: 20px auto;
-  width: 150px;
-  height: auto;
+  background: #003366;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
 }
 
-header h1 {
-  margin: 10px 0;
-  color: #1e90ff;
-  font-size: 2.4em;
-  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
+form label {
+  margin-top: 10px;
+  font-weight: bold;
+  color: white;
+}
+
+form input, form textarea, form button {
+  margin-top: 5px;
+  padding: 10px;
+  font-size: 1em;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+}
+
+form button {
+  background-color: #1e90ff;
+  color: white;
+  border: none;
+  cursor: pointer;
+  margin-top: 20px;
+}
+
+form button:hover {
+  background-color: #1c86ee;
+}
+
+/* קו מפריד */
+hr {
+  border: 0;
+  height: 2px;
+  background: #add8e6;
+  margin: 20px 0;
 }
