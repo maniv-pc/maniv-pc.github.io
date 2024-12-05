@@ -1,87 +1,84 @@
-/* כיווניות ימין לשמאל */
+/* צבעי רקע וטיפוגרפיה כללית */
 body {
   direction: rtl;
-  font-family: Arial, sans-serif;
-  background-color: #f7f9fc;
-  line-height: 1.6;
+  font-family: 'Arial', sans-serif;
+  background-color: #eef2f5;
   margin: 0;
   padding: 0;
+  color: #333;
 }
 
 /* כותרות */
-h1, h2, h3 {
-  color: #1e90ff;
+h1, h2 {
   text-align: center;
-}
-
-/* לוגו */
-.logo {
-  display: block;
-  margin: 0 auto;
-  width: 120px;
-  height: auto;
-}
-
-/* עיצוב הגלריה */
-.gallery {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 20px;
+  color: #1e90ff;
   margin: 20px 0;
 }
 
+h2 {
+  font-size: 1.8em;
+  border-bottom: 2px solid #1e90ff;
+  display: inline-block;
+  padding-bottom: 5px;
+}
+
+/* עיצוב גלריה */
+.gallery {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.gallery-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  justify-content: center;
+}
+
 .gallery-item {
-  width: 250px;
-  text-align: center;
+  position: relative;
+  width: 300px;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.gallery-item:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
 }
 
 .gallery-item img {
   width: 100%;
   height: auto;
-  border-radius: 8px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  display: block;
 }
 
-.gallery-item h3 {
-  margin: 10px 0;
-  font-size: 1.2em;
-  color: #333;
-}
-
-/* טופס יצירת קשר */
-form {
-  display: flex;
-  flex-direction: column;
-  max-width: 400px;
-  margin: 0 auto;
-  background: #ffffff;
-  padding: 20px;
-  border-radius: 10px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-}
-
-form label {
-  margin-top: 10px;
+.caption {
+  position: absolute;
+  bottom: 0;
+  background: rgba(30, 144, 255, 0.8);
+  color: white;
+  width: 100%;
+  text-align: center;
+  padding: 10px;
+  font-size: 1.1em;
   font-weight: bold;
 }
 
-form input, form textarea, form button {
-  margin-top: 5px;
-  padding: 10px;
-  font-size: 1em;
-  border: 1px solid #ddd;
-  border-radius: 5px;
+/* עיצוב ללוגו */
+.logo {
+  display: block;
+  margin: 20px auto;
+  width: 150px;
+  height: auto;
 }
 
-form button {
-  background-color: #1e90ff;
-  color: white;
-  border: none;
-  cursor: pointer;
-  margin-top: 20px;
-}
-
-form button:hover {
-  background-color: #1c86ee;
+header h1 {
+  margin: 10px 0;
+  color: #1e90ff;
+  font-size: 2.4em;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
 }
