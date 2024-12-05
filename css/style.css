@@ -1,27 +1,87 @@
+/* כיווניות ימין לשמאל */
 body {
+  direction: rtl;
   font-family: Arial, sans-serif;
+  background-color: #f7f9fc;
   line-height: 1.6;
   margin: 0;
   padding: 0;
-  background: #f4f4f4;
 }
-header {
-  background: #333;
-  color: white;
-  padding: 10px 0;
+
+/* כותרות */
+h1, h2, h3 {
+  color: #1e90ff;
   text-align: center;
 }
-header nav a {
-  color: white;
-  margin: 0 15px;
-  text-decoration: none;
+
+/* לוגו */
+.logo {
+  display: block;
+  margin: 0 auto;
+  width: 120px;
+  height: auto;
 }
-main {
+
+/* עיצוב הגלריה */
+.gallery {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 20px;
+  margin: 20px 0;
+}
+
+.gallery-item {
+  width: 250px;
+  text-align: center;
+}
+
+.gallery-item img {
+  width: 100%;
+  height: auto;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.gallery-item h3 {
+  margin: 10px 0;
+  font-size: 1.2em;
+  color: #333;
+}
+
+/* טופס יצירת קשר */
+form {
+  display: flex;
+  flex-direction: column;
+  max-width: 400px;
+  margin: 0 auto;
+  background: #ffffff;
   padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
-footer {
-  background: #333;
+
+form label {
+  margin-top: 10px;
+  font-weight: bold;
+}
+
+form input, form textarea, form button {
+  margin-top: 5px;
+  padding: 10px;
+  font-size: 1em;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+}
+
+form button {
+  background-color: #1e90ff;
   color: white;
-  text-align: center;
-  padding: 10px 0;
+  border: none;
+  cursor: pointer;
+  margin-top: 20px;
+}
+
+form button:hover {
+  background-color: #1c86ee;
 }
