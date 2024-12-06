@@ -11,10 +11,12 @@
     <img src="assets/logo.png" alt="לוגו מניב לך מחשב" class="logo">
     <h1>מניב לך מחשב</h1>
     <nav>
-      <a href="index.html">דף הבית</a>
-      <a href="how-it-works.html">איך זה עובד</a>
-      <a href="contact.html">צור קשר</a>
-      <a href="referral.html">חבר מביא חבר</a>
+      <ul>
+        <li><a href="index.html">דף הבית</a></li>
+        <li><a href="how-it-works.html">איך זה עובד</a></li>
+        <li><a href="contact.html">צור קשר</a></li>
+        <li><a href="referral.html">חבר מביא חבר</a></li>
+      </ul>
     </nav>
   </header>
   
@@ -23,36 +25,55 @@
       <h2>ייעוץ והרכבת מחשבים בהתאמה אישית</h2>
       <p>מחשב שמתאים בדיוק לתקציב ולצרכים שלך.</p>
     </section>
-    <hr>
+    
     <section class="gallery">
       <h2>מחשבים שהרכבנו</h2>
       <div class="gallery-container">
         <div class="gallery-item">
-          <h3>מחשב חלקים משומשים</h3>
-          <img src="assets/high-end-sechand.jpg" alt="מחשב מחלקים משומשים עוצמתי">
+          <h3>מחשב לגיימינג</h3>
+          <img src="assets/gaming-pc.jpg" alt="מחשב גיימינג">
         </div>
         <div class="gallery-item">
           <h3>מחשב לעריכת וידאו</h3>
           <img src="assets/video-editing-pc.jpg" alt="מחשב לעריכת וידאו">
         </div>
         <div class="gallery-item">
-          <h3>מחשבים קטנים ועוצמתיים</h3>
-          <img src="assets/small-strong.jpg" alt="מחשב קטן מימדים עוצמתי">
+          <h3>מחשב לבית ולמשרד</h3>
+          <img src="assets/office-pc.jpg" alt="מחשב לבית ולמשרד">
         </div>
       </div>
     </section>
-    <hr>
+    
     <section>
       <h2>צור קשר</h2>
       <form>
         <label for="name">שם מלא:</label>
         <input type="text" id="name" name="name" required>
+        
         <label for="email">אימייל:</label>
         <input type="email" id="email" name="email" required>
+        
         <label for="budget">תקציב:</label>
         <input type="number" id="budget" name="budget" required>
-        <label for="needs">תיאור הצרכים:</label>
-        <textarea id="needs" name="needs" required></textarea>
+        
+        <label>שימושים:</label>
+        <div class="checkbox-container">
+          <input type="checkbox" id="gaming" name="usage" value="gaming">
+          <label for="gaming">גיימינג</label>
+          <input type="checkbox" id="video-editing" name="usage" value="video-editing">
+          <label for="video-editing">עריכת וידאו</label>
+          <input type="checkbox" id="programming" name="usage" value="programming">
+          <label for="programming">תכנות</label>
+          <input type="checkbox" id="office" name="usage" value="office">
+          <label for="office">פעילות שגרתית (משרדי)</label>
+          <input type="checkbox" id="study" name="usage" value="study">
+          <label for="study">לימודים שאינם תכנותיים</label>
+          <input type="checkbox" id="other" name="usage" value="other">
+          <label for="other">אחר (פרט)</label>
+        </div>
+        
+        <textarea id="other-details" name="other-details" placeholder="פרט את השימוש"></textarea>
+        
         <button type="submit">שלח</button>
       </form>
     </section>
@@ -62,4 +83,12 @@
     <p>© 2024 יניב - מניב לך מחשב</p>
   </footer>
 </body>
+<script>
+  const otherCheckbox = document.getElementById("other");
+  const otherDetails = document.getElementById("other-details");
+
+  otherCheckbox.addEventListener("change", () => {
+    otherDetails.style.display = otherCheckbox.checked ? "block" : "none";
+  });
+</script>
 </html>

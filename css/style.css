@@ -1,7 +1,7 @@
-/* כיווניות ימין לשמאל */
+/* כיווניות ימין לשמאל ועיצוב בסיסי */
 body {
   direction: rtl;
-  font-family: Arial, sans-serif;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   background-color: navy;
   color: white;
   margin: 0;
@@ -10,55 +10,69 @@ body {
 
 /* כותרות */
 h1, h2, h3 {
-  color: #1e90ff;
   text-align: center;
+  color: #1e90ff;
+  margin: 20px 0;
 }
 
-/* עיצוב התפריט */
+/* HEADER */
 header {
   background-color: #001f3f;
   padding: 20px;
   text-align: center;
 }
 
-header nav a {
-  color: white;
-  margin: 0 15px;
+header nav {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+}
+
+header nav ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+header nav ul li {
+  display: inline-block;
+  margin: 0 10px;
+}
+
+header nav ul li a {
   text-decoration: none;
+  color: white;
   font-weight: bold;
+  padding: 5px 10px;
+  border: 2px solid transparent;
 }
 
-header nav a:hover {
-  text-decoration: underline;
+header nav ul li a:hover {
+  border-bottom: 2px solid #1e90ff;
 }
 
-/* עיצוב גלריה אופקית */
+/* גלריה */
 .gallery {
+  background-color: #002f5f;
   padding: 20px;
-  background-color: #003366;
 }
 
 .gallery-container {
   display: flex;
-  flex-wrap: nowrap;
-  overflow-x: auto;
   gap: 20px;
-  justify-content: space-evenly;
-  padding: 10px 0;
+  justify-content: center;
 }
 
 .gallery-item {
   text-align: center;
   width: 250px;
-  border-radius: 8px;
-  overflow: hidden;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
 
 .gallery-item img {
   width: 100%;
   height: auto;
   border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
 }
 
 .gallery-item h3 {
@@ -82,7 +96,6 @@ form {
 form label {
   margin-top: 10px;
   font-weight: bold;
-  color: white;
 }
 
 form input, form textarea, form button {
@@ -105,10 +118,24 @@ form button:hover {
   background-color: #1c86ee;
 }
 
-/* קו מפריד */
-hr {
-  border: 0;
-  height: 2px;
-  background: #add8e6;
-  margin: 20px 0;
+/* Checkbox options */
+.checkbox-container {
+  margin: 10px 0;
+}
+
+textarea {
+  display: none;
+  margin-top: 10px;
+}
+
+/* FOOTER */
+footer {
+  background-color: black;
+  color: white;
+  padding: 20px;
+  text-align: center;
+  position: absolute;
+  bottom: 0;
+  width: 100%;
+  border-top: 2px solid #1e90ff;
 }
