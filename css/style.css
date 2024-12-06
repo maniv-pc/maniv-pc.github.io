@@ -128,6 +128,14 @@ textarea {
   margin-top: 10px;
 }
 
+/* עיצוב ללוגו */
+.logo {
+  display: block;
+  margin: 20px auto;
+  width: 150px;
+  height: auto;
+}
+
 /* FOOTER */
 footer {
   background-color: black;
