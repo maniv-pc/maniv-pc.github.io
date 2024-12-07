@@ -2,7 +2,7 @@
 body {
   direction: rtl;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  background-color: #3a30c2;
+  background-color: #090452;
   color: white;
   margin: 0;
   padding: 0;
@@ -18,15 +18,15 @@ h1, h2, h3 {
 /* HEADER */
 header {
   background-color: #001f3f;
-  padding: 20px;
+  padding: 10px;
   display: flex;
   align-items: center;
   justify-content: space-between;
 }
 
 header .logo {
-  width: 30px;
-  height: 30px;
+  width: 4em;
+  height: 4em;
 }
 
 header nav {
@@ -101,7 +101,7 @@ form {
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
 }
 
-label, input, textarea, select {
+label, textarea, select {
   display: block;
   margin: 10px 0;
 }
