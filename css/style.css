@@ -2,7 +2,7 @@
 body {
   direction: rtl;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  background-color: navy;
+  background-color: #3a30c2;
   color: white;
   margin: 0;
   padding: 0;
@@ -11,7 +11,7 @@ body {
 /* כותרות */
 h1, h2, h3 {
   text-align: center;
-  color: #1e90ff;
+  color: #2ab8f0;
   margin: 20px 0;
 }
 
@@ -19,7 +19,14 @@ h1, h2, h3 {
 header {
   background-color: #001f3f;
   padding: 20px;
-  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+header .logo {
+  width: 30px;
+  height: 30px;
 }
 
 header nav {
@@ -30,8 +37,8 @@ header nav {
 
 header nav ul {
   list-style: none;
-  padding: 0;
-  margin: 0;
+  display: flex;
+  gap: 20px;
 }
 
 header nav ul li {
@@ -42,13 +49,14 @@ header nav ul li {
 header nav ul li a {
   text-decoration: none;
   color: white;
-  font-weight: bold;
-  padding: 5px 10px;
-  border: 2px solid transparent;
 }
 
 header nav ul li a:hover {
   border-bottom: 2px solid #1e90ff;
+}
+
+main {
+  padding: 20px;
 }
 
 /* גלריה */
@@ -89,17 +97,20 @@ form {
   margin: 20px auto;
   background: #003366;
   padding: 20px;
-  border-radius: 10px;
+  border-radius: 8px;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
 }
 
+label, input, textarea, select {
+  display: block;
+  margin: 10px 0;
+}
+
 form label {
-  margin-top: 10px;
   font-weight: bold;
 }
 
 form input, form textarea, form button {
-  margin-top: 5px;
   padding: 10px;
   font-size: 1em;
   border: 1px solid #ddd;
@@ -128,19 +139,12 @@ textarea {
   margin-top: 10px;
 }
 
-/* עיצוב ללוגו */
-.logo {
-  display: block;
-  margin: 20px auto;
-  width: 150px;
-  height: auto;
-}
 
 /* FOOTER */
 footer {
   background-color: black;
   color: white;
-  padding: 20px;
+  padding: 10px;
   text-align: center;
   position: absolute;
   bottom: 0;

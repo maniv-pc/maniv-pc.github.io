@@ -21,60 +21,60 @@
   </header>
   
   <main>
-    <section class="intro">
-      <h2>ייעוץ והרכבת מחשבים בהתאמה אישית</h2>
-      <p>מחשב שמתאים בדיוק לתקציב ולצרכים שלך.</p>
-    </section>
-    
-    <section class="gallery">
-      <h2>מחשבים שהרכבנו</h2>
-      <div class="gallery-container">
-        <div class="gallery-item">
-          <h3>מחשב לגיימינג</h3>
-          <img src="assets/gaming-pc.jpg" alt="מחשב גיימינג">
-        </div>
-        <div class="gallery-item">
-          <h3>מחשב לעריכת וידאו</h3>
-          <img src="assets/video-editing-pc.jpg" alt="מחשב לעריכת וידאו">
-        </div>
-        <div class="gallery-item">
-          <h3>מחשב לבית ולמשרד</h3>
-          <img src="assets/office-pc.jpg" alt="מחשב לבית ולמשרד">
-        </div>
-      </div>
-    </section>
-    
     <section>
-      <h2>צור קשר</h2>
-      <form>
+      <h2>טופס ייעוץ והרכבה</h2>
+      <form id="consultation-form">
+        <!-- שם ותקציב -->
         <label for="name">שם מלא:</label>
         <input type="text" id="name" name="name" required>
         
-        <label for="email">אימייל:</label>
-        <input type="email" id="email" name="email" required>
-        
         <label for="budget">תקציב:</label>
         <input type="number" id="budget" name="budget" required>
-        
+
+        <label>האם התקציב כולל:</label>
+        <div>
+          <input type="checkbox" id="computer-only" name="budget-options" value="computer" checked>
+          <label for="computer-only">מחשב בלבד</label>
+          <input type="checkbox" id="os" name="budget-options" value="os">
+          <label for="os">מערכת הפעלה</label>
+          <input type="checkbox" id="peripherals" name="budget-options" value="peripherals">
+          <label for="peripherals">ציוד היקפי</label>
+        </div>
+
+        <div id="os-options" style="display: none;">
+          <label>בחר מערכת הפעלה:</label>
+          <select id="os-select">
+            <option value="windows-11-pro">Windows 11 Pro</option>
+            <option value="windows-11-home">Windows 11 Home</option>
+            <option value="linux-mint">Linux Mint</option>
+            <option value="other">אחר</option>
+          </select>
+          <textarea id="other-os" placeholder="פרט מערכת הפעלה" style="display: none;"></textarea>
+        </div>
+
+        <!-- שימושים -->
         <label>שימושים:</label>
-        <div class="checkbox-container">
+        <div>
           <input type="checkbox" id="gaming" name="usage" value="gaming">
           <label for="gaming">גיימינג</label>
           <input type="checkbox" id="video-editing" name="usage" value="video-editing">
           <label for="video-editing">עריכת וידאו</label>
-          <input type="checkbox" id="programming" name="usage" value="programming">
-          <label for="programming">תכנות</label>
-          <input type="checkbox" id="office" name="usage" value="office">
-          <label for="office">פעילות שגרתית (משרדי)</label>
-          <input type="checkbox" id="study" name="usage" value="study">
-          <label for="study">לימודים שאינם תכנותיים</label>
-          <input type="checkbox" id="other" name="usage" value="other">
-          <label for="other">אחר (פרט)</label>
+          <input type="checkbox" id="basic" name="usage" value="basic">
+          <label for="basic">שימוש בסיסי</label>
+          <input type="checkbox" id="advanced" name="usage" value="advanced">
+          <label for="advanced">תכנות מתקדם</label>
+          <input type="checkbox" id="other-usage" name="usage" value="other">
+          <label for="other-usage">אחר (פרט)</label>
         </div>
-        
-        <textarea id="other-details" name="other-details" placeholder="פרט את השימוש"></textarea>
-        
-        <button type="submit">שלח</button>
+        <textarea id="other-usage-details" placeholder="פרט את השימוש" style="display: none;"></textarea>
+
+        <!-- מקום ההרכבה -->
+        <label>האם לבצע הרכבה בבית הלקוח?</label>
+        <input type="checkbox" id="at-home" name="assembly-location">
+
+        <!-- תוצאה -->
+        <button type="button" onclick="calculateFee()">חשב עמלה</button>
+        <div id="result" style="margin-top: 20px;"></div>
       </form>
     </section>
   </main>
@@ -82,13 +82,7 @@
   <footer>
     <p>© 2024 יניב - מניב לך מחשב</p>
   </footer>
-</body>
-<script>
-  const otherCheckbox = document.getElementById("other");
-  const otherDetails = document.getElementById("other-details");
 
-  otherCheckbox.addEventListener("change", () => {
-    otherDetails.style.display = otherCheckbox.checked ? "block" : "none";
-  });
-</script>
+  <script src="js/script.js"></script>
+</body>
 </html>
