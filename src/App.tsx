@@ -321,7 +321,7 @@ const ComputerBuildWebsite = () => {
             onClick={() => setActivePage('home')} 
             className="hover:text-blue-200"
           >
-            דף הבית
+           הצעה
           </button>
           <button 
             onClick={() => setActivePage('gallery')} 
