@@ -22,7 +22,7 @@ const computerGallery = [
   {
     title: "מחשב גיימינג יד 2",
     description: "מחשב בחצי מתקציב חדש עם ביצועים מעולים למשחקים",
-    imageUrl: "/api/placeholder/300/200"
+    imageUrl: "/src/assets/high-end-sechand.jpg"
   },
   {
     title: "מחשב משרדי",
@@ -100,7 +100,13 @@ const ComputerBuildWebsite = () => {
 
   const calculateServiceCost = () => {
     const budgetNum = parseFloat(budget);
-    let baseCost = budgetNum > 10000 ? 1000 : budgetNum * 0.1;
+    let baseCost;
+
+    if (buildLocation === 'customer') {
+      baseCost = budgetNum > 10000 ? 1250 : budgetNum * 0.15; // 15% עבור הרכבה בבית הלקוח
+    } else {
+      baseCost = budgetNum > 10000 ? 1000 : budgetNum * 0.1; // 10% או מקסימום 1000 ₪
+    }
     
     if (buildLocation === 'business' && pickupOrShipping === 'shipping') {
       baseCost += 150;
@@ -133,9 +139,9 @@ const ComputerBuildWebsite = () => {
       case 'home':
       default:
         return (
-          <Card className="w-full max-w-2xl mx-auto bg-blue-800 text-gray-800">
+          <Card className="w-full max-w-2xl mx-auto">
             <CardHeader>
-              <CardTitle className="text-white">שליחת הצעה למפרט</CardTitle>
+              <CardTitle className="text-white text-center">שליחת הצעה למפרט</CardTitle>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-4">
@@ -248,13 +254,13 @@ const ComputerBuildWebsite = () => {
                   onValueChange={setBuildLocation}
                   className="mb-4"
                 >
-                  <div className="flex items-center space-x-reverse space-x-2 rtl:space-x-reverse">
+                  <div className="flex items-center flex-row-reverse space-x-reverse space-x-2 rtl:space-x-reverse">
                     <RadioGroupItem value="business" id="business" />
                     <Label htmlFor="business">הרכבה בבית העסק</Label>
                   </div>
-                  <div className="flex items-center space-x-reverse space-x-2 rtl:space-x-reverse">
+                  <div className="flex items-center flex-row-reverse space-x-reverse space-x-2 rtl:space-x-reverse">
                     <RadioGroupItem value="customer" id="customer" />
-                    <Label htmlFor="customer">הרכבה בבית הלקוח</Label>
+                    <Label htmlFor="customer">הרכבה בבית הלקוח (תוספת 5%)</Label>
                   </div>
                 </RadioGroup>
 
@@ -264,18 +270,18 @@ const ComputerBuildWebsite = () => {
                     onValueChange={setPickupOrShipping}
                     className="mb-4"
                   >
-                    <div className="flex items-center space-x-reverse space-x-2 rtl:space-x-reverse">
+                    <div className="flex items-center flex-row-reverse space-x-reverse space-x-2 rtl:space-x-reverse">
                       <RadioGroupItem value="pickup" id="pickup" />
                       <Label htmlFor="pickup">איסוף מהעסק</Label>
                     </div>
-                    <div className="flex items-center space-x-reverse space-x-2 rtl:space-x-reverse">
+                    <div className="flex items-center flex-row-reverse space-x-reverse space-x-2 rtl:space-x-reverse">
                       <RadioGroupItem value="shipping" id="shipping" />
                       <Label htmlFor="shipping">משלוח לבית הלקוח (150 ₪)</Label>
                     </div>
                   </RadioGroup>
                 )}
 
-                <div className="text-black">
+                <div>
                   עלות השירות: {calculateServiceCost()} ₪
                 </div>
 
@@ -292,13 +298,13 @@ const ComputerBuildWebsite = () => {
   return (
     <div 
       dir="rtl" 
-      className="container mx-auto p-4 bg-blue-900 text-white min-h-screen flex flex-col"
+      className="container mx-auto p-4 bg-blue-950 text-white min-h-screen flex flex-col"
     >
       <header className="flex justify-between items-center mb-8">
         <div className="flex items-center">
           <img 
-            src="/api/placeholder/50/50" 
-            alt="לוגו מניב לך מחשב" 
+            src="/public/logo.png" 
+            // alt="לוגו מניב לך מחשב" 
             className="w-12 h-12 ml-4 rounded-full"
           />
           <h1 className="text-2xl font-bold">מניב לך מחשב</h1>
