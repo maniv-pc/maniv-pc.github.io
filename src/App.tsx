@@ -7,22 +7,26 @@ import { Checkbox } from 'components/ui/checkbox';
 import { Label } from 'components/ui/label';
 import { RadioGroup, RadioGroupItem } from 'components/ui/radio-group';
 
+import highEndSechand from "./assets/high-end-sechand.jpg";
+import smallStrong from "./assets/small-strong.jpg";
+import videoEditing from "./assets/video-editing-pc.jpg";
+
 
 const computerGallery = [
   {
     title: "מחשב קטן ועוצמתי",
     description: "לוח אם קטן עם ביצועים מרשימים, מתאים למקומות מוגבלי שטח",
-    imageUrl: "/api/placeholder/300/200"
+    imageUrl: smallStrong
   },
   {
     title: "מחשב לעריכת וידאו",
     description: "מעבד חזק ביותר, RAM מקסימלי וכרטיס גרפי מקצועי",
-    imageUrl: "/api/placeholder/300/200"
+    imageUrl: videoEditing
   },
   {
     title: "מחשב גיימינג יד 2",
     description: "מחשב בחצי מתקציב חדש עם ביצועים מעולים למשחקים",
-    imageUrl: "/src/assets/high-end-sechand.jpg"
+    imageUrl: highEndSechand
   },
   {
     title: "מחשב משרדי",
@@ -51,7 +55,7 @@ const GalleryPage = () => (
           <p className="mb-4">{computer.description}</p>
           <img 
             src={computer.imageUrl} 
-            alt={computer.title} 
+            // alt={computer.title} 
             className="w-full h-48 object-cover rounded"
           />
         </div>
@@ -145,6 +149,7 @@ const ComputerBuildWebsite = () => {
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-4">
+                <h3 className="mb-2 font-bold text-lg underline">פרטים מזהים</h3>
                 <Input 
                   placeholder="שם מלא" 
                   value={fullName}
@@ -170,6 +175,7 @@ const ComputerBuildWebsite = () => {
                   />
                 </div>
 
+                <h3 className="mb-2 font-bold text-lg underline">על בסיס מה נרכיב</h3>
                 <Input 
                   type="number" 
                   placeholder="תקציב מחשב" 
@@ -183,7 +189,7 @@ const ComputerBuildWebsite = () => {
                   <SelectTrigger className="bg-white text-black">
                     <SelectValue placeholder="מערכת הפעלה" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="bg-white text-black mt-2 rounded shadow-lg transition-all duration-300">
                     {operatingSystems.map(os => (
                       <SelectItem key={os} value={os}>{os}</SelectItem>
                     ))}
@@ -201,7 +207,7 @@ const ComputerBuildWebsite = () => {
                 )}
 
                 <div>
-                  <h3 className="mb-2">שימוש במחשב</h3>
+                  <h3 className="mb-2 font-bold text-lg underline">שימוש במחשב</h3>
                   <div className="grid grid-cols-2 gap-2">
                     {[
                       { value: 'גיימינג', label: 'גיימינג' },
@@ -232,7 +238,7 @@ const ComputerBuildWebsite = () => {
                     <SelectTrigger className="bg-white text-black">
                       <SelectValue placeholder="רזולוצית משחק" />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="bg-white text-black mt-2 rounded shadow-lg transition-all duration-300">
                       {['4K', '2K', '1080p'].map(res => (
                         <SelectItem key={res} value={res}>{res}</SelectItem>
                       ))}
@@ -249,6 +255,7 @@ const ComputerBuildWebsite = () => {
                   />
                 )}
 
+                <h3 className="mb-2 font-bold text-lg underline">מיקום הרכבה</h3>
                 <RadioGroup 
                   defaultValue="business" 
                   onValueChange={setBuildLocation}
@@ -281,7 +288,7 @@ const ComputerBuildWebsite = () => {
                   </RadioGroup>
                 )}
 
-                <div>
+                <div className="font-bold">
                   עלות השירות: {calculateServiceCost()} ₪
                 </div>
 
@@ -298,14 +305,14 @@ const ComputerBuildWebsite = () => {
   return (
     <div 
       dir="rtl" 
-      className="container mx-auto p-4 bg-blue-950 text-white min-h-screen flex flex-col"
+      className="container mx-auto p-4 bg-blue-950 text-white min-h-screen flex flex-col w-full h-full"
     >
       <header className="flex justify-between items-center mb-8">
         <div className="flex items-center">
           <img 
-            src="/public/logo.png" 
+            src={require('./assets/logo.png')} 
             // alt="לוגו מניב לך מחשב" 
-            className="w-12 h-12 ml-4 rounded-full"
+            className="w-30 h-12 ml-4"
           />
           <h1 className="text-2xl font-bold">מניב לך מחשב</h1>
         </div>
@@ -335,7 +342,7 @@ const ComputerBuildWebsite = () => {
         {renderContent()}
       </main>
 
-      <footer className="w-full bg-purple-950 text-white p-3 text-center mb-0 mt-2.5">
+      <footer className="w-full bg-black text-white p-3 text-center mb-0 mt-2.5">
         <div>© 2024 מניב לך מחשב. כל הזכויות שמורות.</div>
         <div>יניב הרשקוביץ - הרכבת מחשבים מותאמת אישית</div>
         <div>צור קשר: 054-5810287 | maniv.pc.founder@gmail.com</div>

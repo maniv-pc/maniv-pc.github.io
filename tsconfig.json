@@ -16,6 +16,6 @@
     "jsx": "preserve",
     "baseUrl": "src" // Keep this as "src"
   },
-  "include": ["src"],
-  "exclude": ["node_modules/@shadcn/ui"]
+  "include": ["src/**/*"],
+  "exclude": ["node_modules"]
 }
