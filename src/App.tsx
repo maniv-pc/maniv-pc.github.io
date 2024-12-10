@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Label } from '@/components/ui/label';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Card, CardContent, CardHeader, CardTitle } from 'components/ui/card';
+import { Button } from "components/ui/button";
+import { Input } from "components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from 'components/ui/select';
+import { Checkbox } from 'components/ui/checkbox';
+import { Label } from 'components/ui/label';
+import { RadioGroup, RadioGroupItem } from 'components/ui/radio-group';
 
 
 const computerGallery = [
@@ -86,7 +86,7 @@ const ComputerBuildWebsite = () => {
   const [budget, setBudget] = useState('');
   const [operatingSystem, setOperatingSystem] = useState('');
   const [customOS, setCustomOS] = useState('');
-  const [useTypes, setUseTypes] = useState([]);
+  const [useTypes, setUseTypes] = useState<string[]>([]);
   const [gameResolution, setGameResolution] = useState('');
   const [videoEditSoftware, setVideoEditSoftware] = useState('');
   const [buildLocation, setBuildLocation] = useState('business');
@@ -109,7 +109,7 @@ const ComputerBuildWebsite = () => {
     return baseCost.toFixed(0);
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = (e: { preventDefault: () => void; }) => {
     e.preventDefault();
     const mailtoLink = `mailto:maniv.pc.founder@gmail.com?subject=הצעה חדשה למפרט מחשב&body=
 שם מלא: ${fullName}
