@@ -6,6 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from 'c
 import { Checkbox } from 'components/ui/checkbox';
 import { Label } from 'components/ui/label';
 import { RadioGroup, RadioGroupItem } from 'components/ui/radio-group';
+import emailjs from "emailjs-com";
 
 import highEndSechand from "./assets/high-end-sechand.jpg";
 import smallStrong from "./assets/small-strong.jpg";
@@ -29,21 +30,29 @@ const computerGallery = [
     imageUrl: highEndSechand
   },
   {
-    title: "מחשב משרדי",
-    description: "מחשב יעיל ואמין לעבודה משרדית",
+    title: "מחשב תקציבי 2500 שח",
+    description: "מחשב שממקסם את התקציב , מריץ משחקים באיכות טובה",
     imageUrl: "/api/placeholder/300/200"
   },
   {
     title: "מחשב למידה",
     description: "מחשב מושלם לסטודנטים ולימודים מקוונים",
     imageUrl: "/api/placeholder/300/200"
-  },
-  {
-    title: "מחשב למעצבים",
-    description: "מחשב עם כרטיס גרפי חזק ומסך מקצועי",
-    imageUrl: "/api/placeholder/300/200"
   }
 ];
+
+const HowItWorksPage = () => (
+  <div className="container mx-auto p-8 bg-blue-900 text-white">
+    <h1 className="text-3xl font-bold mb-6 text-center">איך זה עובד?</h1>
+    <ol className="list-decimal pl-6 space-y-4">
+      <li>ממלאים טופס הצעה ומזינים את הפרטים (שם, טלפון/מייל, תקציב).</li>
+      <li>בוחרים בין ייעוץ בלבד, הרכבה בלבד או ייעוץ והרכבה.</li>
+      <li>תוך 2 ימי עסקים נשלחת הצעה עם קישורים לחלקים.</li>
+      <li>הלקוח מזמין את החלקים ומשלוח בהתאם לאפשרות שנבחרה.</li>
+      <li>הרכבה בבית העסק (10%) או בבית הלקוח (15%).</li>
+    </ol>
+  </div>
+);
 
 const GalleryPage = () => (
   <div className="container mx-auto p-4 bg-blue-900 text-white">
@@ -83,6 +92,7 @@ const ReferralPage = () => (
 );
 
 const ComputerBuildWebsite = () => {
+  const [selectedOption, setSelectedOption] = useState("consultationAndBuild"); // סוג השירות שנבחר
   const [activePage, setActivePage] = useState('home');
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
@@ -102,40 +112,84 @@ const ComputerBuildWebsite = () => {
     'Windows 7', 'Linux Mint', 'Ubuntu'
   ];
 
-  const calculateServiceCost = () => {
-    const budgetNum = parseFloat(budget);
-    let baseCost;
-
-    if (buildLocation === 'customer') {
-      baseCost = budgetNum > 10000 ? 1250 : budgetNum * 0.15; // 15% עבור הרכבה בבית הלקוח
-    } else {
-      baseCost = budgetNum > 10000 ? 1000 : budgetNum * 0.1; // 10% או מקסימום 1000 ₪
+  const calculateServiceCost = (budget: number, option: string) => {
+    if (!budget || budget <= 0) return 0; // מניעת NAN
+  
+    const totalServiceCost = budget * 0.1; // 10% מהתקציב
+    const consultationCost = totalServiceCost * 0.2; // 20% ייעוץ
+    const buildCost = totalServiceCost * 0.8; // 80% הרכבה
+  
+    switch (option) {
+      case "consultationOnly":
+        return consultationCost.toFixed(0);
+      case "buildOnly":
+        return buildCost.toFixed(0);
+      default:
+        return totalServiceCost.toFixed(0); // ברירת מחדל: ייעוץ + הרכבה
     }
-    
-    if (buildLocation === 'business' && pickupOrShipping === 'shipping') {
-      baseCost += 150;
-    }
-
-    return baseCost.toFixed(0);
   };
-
-  const handleSubmit = (e: { preventDefault: () => void; }) => {
+  
+  const handleSubmit = async (e: { preventDefault: () => void; }) => {
     e.preventDefault();
-    const mailtoLink = `mailto:maniv.pc.founder@gmail.com?subject=הצעה חדשה למפרט מחשב&body=
-שם מלא: ${fullName}
-אימייל: ${email}
-טלפון: ${phone}
-תקציב: ${budget} ₪
-מערכת הפעלה: ${operatingSystem}
-סוג שימוש: ${useTypes.join(', ')}
-מיקום הרכבה: ${buildLocation}
-עלות שירות: ${calculateServiceCost()} ₪`;
-    
-    window.location.href = mailtoLink;
+  
+    const templateParams = {
+      fullName,
+      email,
+      phone,
+      budget,
+      operatingSystem,
+      selectedOption,
+      useTypes: useTypes.join(', '),
+      serviceCost: calculateServiceCost(parseFloat(budget), selectedOption),
+    };
+  
+    try {
+      const response = await fetch("https://api.emailjs.com/api/v1.0/email/send", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          service_id: "your_service_id",
+          template_id: "your_template_id",
+          user_id: "your_public_key",
+          template_params: templateParams,
+        }),
+      });
+  
+      if (!/^0\d{1,2}-?\d{7}$/.test(phone)) {
+        alert("מספר טלפון לא תקין. ניתן להשתמש בפורמט עם מקף בודד או ללא מקפים");
+        return;
+      }
+      
+      if (!/^\S+@\S+\.\S+$/.test(email)) {
+        alert("כתובת מייל לא תקינה.");
+        return;
+      }
+      
+      if (parseFloat(budget) <= 0) {
+        alert("יש להזין תקציב גבוה מ-0.");
+        return;
+      }
+      
+      if (response.ok) {
+        alert("ההצעה נשלחה בהצלחה!");
+      } else {
+        const error = await response.json();
+        console.error("שגיאה:", error);
+        alert("שליחת ההצעה נכשלה. נסה שוב.");
+      }
+    } catch (err) {
+      console.error("שגיאה:", err);
+      alert("שגיאה במהלך שליחת ההצעה. נסה שוב מאוחר יותר.");
+    }
   };
+  
 
   const renderContent = () => {
     switch(activePage) {
+      case 'howItWorks':
+        return <HowItWorksPage />;
       case 'referral':
         return <ReferralPage />;
       case 'gallery':
@@ -255,6 +309,24 @@ const ComputerBuildWebsite = () => {
                   />
                 )}
 
+                <h3 className="mb-2 font-bold text-lg underline">שירות</h3>
+                <RadioGroup onValueChange={(value) => setSelectedOption(value)} defaultValue="consultationAndBuild">
+                  <div className="flex flex-col space-y-2">
+                    <div className="flex items-center flex-row-reverse space-x-reverse space-x-2 rtl:space-x-reverse">
+                      <RadioGroupItem value="consultationOnly" id="consultationOnly" />
+                      <Label htmlFor="consultationOnly">ייעוץ בלבד</Label>
+                    </div>
+                    <div className="flex items-center flex-row-reverse space-x-reverse space-x-2 rtl:space-x-reverse">
+                      <RadioGroupItem value="buildOnly" id="buildOnly" />
+                      <Label htmlFor="buildOnly">הרכבה בלבד</Label>
+                    </div>
+                    <div className="flex items-center flex-row-reverse space-x-reverse space-x-2 rtl:space-x-reverse">
+                      <RadioGroupItem value="consultationAndBuild" id="consultationAndBuild" />
+                      <Label htmlFor="consultationAndBuild">ייעוץ והרכבה (ברירת מחדל)</Label>
+                    </div>
+                  </div>
+                </RadioGroup>
+
                 <h3 className="mb-2 font-bold text-lg underline">מיקום הרכבה</h3>
                 <RadioGroup 
                   defaultValue="business" 
@@ -289,7 +361,7 @@ const ComputerBuildWebsite = () => {
                 )}
 
                 <div className="font-bold">
-                  עלות השירות: {calculateServiceCost()} ₪
+                  עלות השירות: {calculateServiceCost(parseFloat(budget), selectedOption)} ₪
                 </div>
 
                 <Button type="submit" className="w-full bg-blue-600 hover:bg-blue-500">
@@ -318,21 +390,22 @@ const ComputerBuildWebsite = () => {
         </div>
         <nav className="flex space-x-reverse space-x-4">
           <button 
+          onClick={() => setActivePage('howItWorks')} className="hover:text-blue-300">
+            איך זה עובד?
+          </button>
+          <button 
             onClick={() => setActivePage('home')} 
-            className="hover:text-blue-200"
-          >
+            className="hover:text-blue-200">
            הצעה
           </button>
           <button 
             onClick={() => setActivePage('gallery')} 
-            className="hover:text-blue-200"
-          >
+            className="hover:text-blue-200">
             גלריה
           </button>
           <button 
             onClick={() => setActivePage('referral')} 
-            className="hover:text-blue-200"
-          >
+            className="hover:text-blue-200">
             הפניות
           </button>
         </nav>
