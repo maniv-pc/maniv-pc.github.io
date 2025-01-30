@@ -155,14 +155,24 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         }
     };
 
+    const getBaseUrl = () => {
+        // אם אנחנו בפריסה, נשתמש בדומיין של GitHub Pages
+        if (process.env.REACT_APP_DEPLOYMENT_URL) {
+            return process.env.REACT_APP_DEPLOYMENT_URL;
+        }
+        // אחרת, נשתמש ב-origin הרגיל
+        return window.location.origin;
+    };
+    
     const signInWithGoogle = async (role?: 'Admin' | 'Customer'): Promise<void> => {
         try {
+            const baseUrl = getBaseUrl();
             const { error } = await supabase.auth.signInWithOAuth({
                 provider: 'google',
                 options: {
                     redirectTo: role === 'Admin' 
-                        ? `${window.location.origin}/admin` 
-                        : `${window.location.origin}/portal`,
+                        ? `${baseUrl}/admin` 
+                        : `${baseUrl}/portal`,
                     queryParams: {
                         access_type: 'offline',
                         prompt: 'consent',
@@ -244,9 +254,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             setUser(null);
             setAuthError(null);
         
-            // Redirect immediately after sign out
-            const currentPath = window.location.pathname;
-            window.location.href = currentPath.includes('/admin') ? '/admin' : '/portal';
+            // Get the current hash route
+            const currentHash = window.location.hash;
+            
+            // בדוק אם המשתמש היה באדמין או בפורטל
+            const redirectPath = currentHash.includes('/admin') ? '/admin' : '/portal';
+            
+            // שימוש ב-HashRouter לניווט
+            window.location.href = `${getBaseUrl()}/#${redirectPath}`;
         } catch (error) {
             console.error('Sign out error:', error);
             setAuthError(error as Error);
