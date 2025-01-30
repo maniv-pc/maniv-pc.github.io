@@ -1,14 +1,25 @@
-// App.tsx
-import React from 'react';
+import React, { useEffect } from 'react';
+import { HashRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import MainWebsite from './pages/main/MainWebsite';
 import AdminApp from './pages/admin/AdminApp';
 import PortalApp from './pages/portal/PortalApp';
 import { AuthProvider } from './context/auth';
 import { ResetPasswordPage } from './pages/auth/ResetPasswordPage';
 
-import { HashRouter as Router, Routes, Route } from 'react-router-dom';
-
 const App = () => {
+  // Clean up the URL on initial load
+  useEffect(() => {
+    const cleanUrl = () => {
+      const currentUrl = window.location.href;
+      const cleanedUrl = currentUrl.replace(/(\?\/&\/~and~)+/g, '');
+      if (currentUrl !== cleanedUrl) {
+        window.history.replaceState(null, '', cleanedUrl);
+      }
+    };
+
+    cleanUrl();
+  }, []);
+
   return (
     <Router>
       <AuthProvider>
@@ -17,6 +28,7 @@ const App = () => {
           <Route path="/admin/*" element={<AdminApp />} />
           <Route path="/portal/*" element={<PortalApp />} />
           <Route path="/" element={<MainWebsite />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </AuthProvider>
     </Router>
