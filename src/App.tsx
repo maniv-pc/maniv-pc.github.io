@@ -10,9 +10,23 @@ const App = () => {
   // Clean up the URL on initial load
   useEffect(() => {
     const cleanUrl = () => {
+      // Get the current URL
       const currentUrl = window.location.href;
-      const cleanedUrl = currentUrl.replace(/(\?\/&\/~and~)+/g, '');
-      if (currentUrl !== cleanedUrl) {
+      
+      // Check if we have the GitHub Pages redirect pattern
+      if (currentUrl.includes('?/')) {
+        // Extract the real path
+        const basePath = currentUrl.split('?/')[0];
+        const actualPath = currentUrl.split('?/')[1].split('?')[0];
+        
+        // Clean up any ~and~ in the query parameters
+        const searchParams = new URLSearchParams(window.location.search);
+        const cleanedSearch = searchParams.toString().replace(/~and~/g, '&');
+        
+        // Reconstruct the URL
+        const cleanedUrl = `${basePath}#/${actualPath}${cleanedSearch ? `?${cleanedSearch}` : ''}`;
+        
+        // Update the URL without causing a page reload
         window.history.replaceState(null, '', cleanedUrl);
       }
     };
