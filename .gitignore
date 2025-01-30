@@ -31,6 +31,7 @@ yarn-error.log*
 
 # Test coverage
 coverage/
+setup-admin.mjs
 
 # React specific
 public/static/
