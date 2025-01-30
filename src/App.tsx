@@ -6,21 +6,20 @@ import PortalApp from './pages/portal/PortalApp';
 import { AuthProvider } from './context/auth';
 import { ResetPasswordPage } from './pages/auth/ResetPasswordPage';
 
-const App = () => {
-  const path = window.location.pathname;
+import { HashRouter as Router, Routes, Route } from 'react-router-dom';
 
+const App = () => {
   return (
-    <AuthProvider>
-      {path.includes('/reset-password') ? (
-        <ResetPasswordPage />
-      ) : path.includes('/admin') ? (
-        <AdminApp />
-      ) : path.includes('/portal') ? (
-        <PortalApp />
-      ) : (
-        <MainWebsite />
-      )}
-    </AuthProvider>
+    <Router>
+      <AuthProvider>
+        <Routes>
+          <Route path="/reset-password" element={<ResetPasswordPage />} />
+          <Route path="/admin/*" element={<AdminApp />} />
+          <Route path="/portal/*" element={<PortalApp />} />
+          <Route path="/" element={<MainWebsite />} />
+        </Routes>
+      </AuthProvider>
+    </Router>
   );
 };
 
