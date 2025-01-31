@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import { createClient, Session, User } from '@supabase/supabase-js';
 import { AuthContextType, AuthMetadata } from './types';
-import { getConfig, getBaseUrl } from '../../config';
+import { getConfig, getBaseUrl, getCurrentEnvironment } from '../../config';
 
 const config = getConfig();
 
@@ -158,25 +158,43 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             throw error;
         }
     };
-    
+
     const signInWithGoogle = async (role?: 'Admin' | 'Customer'): Promise<void> => {
         try {
+            const currentEnv = getCurrentEnvironment();
             const baseUrl = getBaseUrl();
-            const { error } = await supabase.auth.signInWithOAuth({
+            const redirectPath = role === 'Admin' ? 'admin' : 'portal';
+            
+            // בחירת כתובת ה-redirect המתאימה בהתאם לסביבה
+            const redirectUrl = currentEnv === 'development'
+                ? `http://localhost:3000/#/${redirectPath}`
+                : `https://maniv-pc.github.io/#/${redirectPath}`;
+    
+            const { data, error } = await supabase.auth.signInWithOAuth({
                 provider: 'google',
                 options: {
-                    redirectTo: `${baseUrl}/#/${role === 'Admin' ? 'admin' : 'portal'}`,
+                    redirectTo: redirectUrl,
                     queryParams: {
                         access_type: 'offline',
                         prompt: 'consent',
                     },
-                    scopes: 'email profile',
+                    scopes: 'email profile'
                 }
             });
             
-            if (error) throw error;
+            if (error) {
+                console.error('OAuth configuration error:', error);
+                throw error;
+            }
+            
+            if (!data?.url) {
+                throw new Error('No OAuth URL returned');
+            }
+            
+            window.location.href = data.url;
+            
         } catch (error) {
-            console.error('Error signing in with Google:', error);
+            console.error('Error in signInWithGoogle:', error);
             throw error;
         }
     };

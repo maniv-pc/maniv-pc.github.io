@@ -55,7 +55,7 @@ interface PartsListViewerProps {
 }
 
 // Constants
-const REQUIRED_COMPONENTS = ['GPU', 'מעבד', 'לוח אם', 'זיכרון', 'ספק כוח', 'אחסון'];
+const REQUIRED_COMPONENTS = ['כרטיס מסך', 'מעבד', 'לוח אם', 'זיכרון', 'ספק כוח', 'אחסון'];
 
 const SINGLE_CHOICE_COMPONENTS = {
     CPU: 'מעבד',
