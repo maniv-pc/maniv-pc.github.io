@@ -16,6 +16,6 @@
     "jsx": "preserve",
     "baseUrl": "src" // Keep this as "src"
   },
-  "include": ["src/**/*"],
+  "include": ["src/**/*", "setup-admin.ts"],
   "exclude": ["node_modules"]
 }

@@ -17,8 +17,6 @@ import { ReferralManager } from './components/referral/ReferralManager';
 // Type imports
 import { Order } from './components/order/types';
 import { Referral } from './components/referral/types';
-import { getEffectivePreferences } from './components/preferences/preferencesHandler';
-
 
 export const PortalApp = () => {
     const [activeTab, setActiveTab] = useState('orders');
@@ -340,32 +338,6 @@ export const PortalApp = () => {
         }
     };
 
-    const handleDeliveryConfirm = async (orderId: string) => {
-        try {
-            const { data: order, error: fetchError } = await supabase
-                .from('authenticated_orders')
-                .select('delivery_type')
-                .eq('id', orderId)
-                .single();
-
-            if (fetchError) throw fetchError;
-
-            const { error: updateError } = await supabase
-                .from('authenticated_orders')
-                .update({
-                    status: 'delivered',
-                    actual_delivery_date: new Date().toISOString()
-                })
-                .eq('id', orderId);
-
-            if (updateError) throw updateError;
-            await fetchOrders();
-        } catch (error) {
-            console.error('Error confirming delivery:', error);
-            setError('Error confirming delivery');
-        }
-    };
-
     const handlePaymentConfirm = async (orderId: string) => {
         try {
             const { data: order, error: fetchError } = await supabase
@@ -426,6 +398,66 @@ export const PortalApp = () => {
         } catch (error) {
             console.error('Error updating terms agreement:', error);
             setError('Error updating terms agreement');
+        }
+    };
+
+    const handleOrderSchedule = async (date: Date, orderId: string) => {
+        try {
+            // First get the authenticated order to get the offer_id
+            const { data: currentOrder, error: fetchError } = await supabase
+                .from('authenticated_orders')
+                .select('offer_id')
+                .eq('id', orderId)
+                .single();
+                
+            if (fetchError) throw fetchError;
+    
+            // Check if selected time is in weekend hours
+            const day = date.getDay();
+            const hour = date.getHours();
+            const isWeekendRate = (day === 5 && hour >= 16) || day === 6;
+            
+            // Then get the current service cost from offers
+            const { data: offerData, error: offerFetchError } = await supabase
+                .from('offers')
+                .select('service_cost')
+                .eq('id', currentOrder.offer_id)
+                .single();
+    
+            if (offerFetchError) throw offerFetchError;
+            
+            // Calculate new service cost if weekend rate applies
+            const currentServiceCost = offerData.service_cost;
+            const updatedServiceCost = isWeekendRate 
+                ? (currentServiceCost + 50)
+                : currentServiceCost;
+    
+            // Update the offers table first
+            const { error: offerUpdateError } = await supabase
+                .from('offers')
+                .update({ service_cost: updatedServiceCost })
+                .eq('id', currentOrder.offer_id);
+    
+            if (offerUpdateError) throw offerUpdateError;
+    
+            // Then update the authenticated_orders table
+            const { error: orderUpdateError } = await supabase
+                .from('authenticated_orders')
+                .update({ 
+                    build_date: date.toISOString(),
+                    status: 'schedule_pending_approval',
+                    weekend_fee_applied: isWeekendRate,
+                    proposed_by: 'customer'
+                })
+                .eq('id', orderId);
+            
+            if (orderUpdateError) throw orderUpdateError;
+            
+            await fetchOrders();
+    
+        } catch (error) {
+            console.error('Error scheduling build:', error);
+            throw error;
         }
     };
     
@@ -568,64 +600,7 @@ export const PortalApp = () => {
                                                 onCancel={handleCancelOrder}
                                                 darkMode={darkMode}
                                                 onOrderUpdate={fetchOrders}
-                                                onSchedule={async (date: Date) => {
-                                                    console.log('Schedule called with date:', date);
-                                                    try {
-                                                        // Check if selected time is in weekend hours
-                                                        const day = date.getDay();
-                                                        const hour = date.getHours();
-                                                        const isWeekendRate = (day === 5 && hour >= 16) || day === 6;
-                                                        
-                                                        // First get the authenticated order to get the offer_id
-                                                        const { data: currentOrder, error: fetchError } = await supabase
-                                                            .from('authenticated_orders')
-                                                            .select('offer_id')
-                                                            .eq('id', order.id)
-                                                            .single();
-                                                            
-                                                        if (fetchError) throw fetchError;
-                                                
-                                                        // Then get the current service cost from offers
-                                                        const { data: offerData, error: offerFetchError } = await supabase
-                                                            .from('offers')
-                                                            .select('service_cost')
-                                                            .eq('id', currentOrder.offer_id)
-                                                            .single();
-                                                
-                                                        if (offerFetchError) throw offerFetchError;
-                                                        
-                                                        // Calculate new service cost if weekend rate applies
-                                                        const currentServiceCost = offerData.service_cost;
-                                                        const updatedServiceCost = isWeekendRate 
-                                                            ? (currentServiceCost + 50)
-                                                            : currentServiceCost;
-                                                
-                                                        // Update the offers table first
-                                                        const { error: offerUpdateError } = await supabase
-                                                            .from('offers')
-                                                            .update({ service_cost: updatedServiceCost })
-                                                            .eq('id', currentOrder.offer_id);
-                                                
-                                                        if (offerUpdateError) throw offerUpdateError;
-                                                
-                                                        // Then update the authenticated_orders table
-                                                        const { error: orderUpdateError } = await supabase
-                                                            .from('authenticated_orders')
-                                                            .update({ 
-                                                                build_date: date.toISOString(),
-                                                                status: 'schedule_pending_approval',
-                                                                weekend_fee_applied: isWeekendRate
-                                                            })
-                                                            .eq('id', order.id);
-                                                        
-                                                        if (orderUpdateError) throw orderUpdateError;
-                                                        
-                                                        await fetchOrders();
-                                                    } catch (error) {
-                                                        console.error('Error scheduling build:', error);
-                                                        throw error;
-                                                    }
-                                                }}
+                                                onSchedule={(date) => handleOrderSchedule(date, order.id)}  // הוספנו את זה
                                                 onPaymentClick={() => setActiveTab('payments')}
                                                 preferences={order.preferences}
                                                 peripheralsBudget={order.peripherals_budget}

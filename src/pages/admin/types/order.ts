@@ -10,7 +10,7 @@ export interface Order {
     transaction_id?: string;
     parts_list?: any;
     build_notes?: string;
-    build_date?: string;
+    build_date: string;
     actual_delivery_date?: string;
     warranty_start_date?: string;
     warranty_end_date?: string;
@@ -23,6 +23,7 @@ export interface Order {
     cancelled_at?: string;
     peripherals_added?: boolean;
     consultation_paid?: boolean;
+    proposed_by: string;
     offers?: {
       full_name: string;
       email: string;

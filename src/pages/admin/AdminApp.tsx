@@ -8,9 +8,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from 'components/ui/tabs';
 import OrderManagement from './components/OrderManagement';
 import { Dashboard } from './components/Dashboard';
 import { ReferralManagement } from './components/ReferralManagement';
-import { Order, Filters, OrderStatus } from './types/order';
-
-const SESSION_TIMEOUT = 5 * 60 * 1000; // 5 minutes
+import { Order, OrderStatus } from './types/order';
 
 interface Metrics {
   daily: MetricItem[];

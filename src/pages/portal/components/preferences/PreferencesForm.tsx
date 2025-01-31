@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader } from 'components/ui/card';
+import { Card, CardContent } from 'components/ui/card';
 import { Checkbox } from 'components/ui/checkbox';
 import { Label } from 'components/ui/label';
 import { Input } from 'components/ui/input';
@@ -237,13 +237,6 @@ export const PreferencesForm: React.FC<PreferencesFormProps> = ({
 
         const getCustomSourcesByType = (type: SourceType) => 
             preferences.custom_sources?.filter(source => source.sourceType === type) || [];
-
-        const currentPreferences = preferences || {
-            parts_source: [],
-            existing_hardware: [],
-            custom_sources: [],
-            custom_peripherals: []
-        };
 
         return (
             <>

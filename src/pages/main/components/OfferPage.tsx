@@ -14,8 +14,7 @@ import { supabase } from 'context/auth'
 import { useLocationService } from 'hooks/useLocationService';
 import type { 
   GeocodingResult, 
-  City as CityData,  // Renamed to match your usage
-  AddressDetails, 
+  City as CityData,
   StreetSuggestion 
 } from 'hooks/useLocationService';
 import { operatingSystems, computerUseTypes, gamingResolutions, videoEditingSoftware } from 'utils/constants';
@@ -26,7 +25,7 @@ const EMAIL_SERVICE = 'service_qy3nij6';
 const EMAIL_P_KEY = 'ulj1-31N6L81zpCEt';
 const EMAIL_OFFER_TEMPLATE_ID = 'template_cnvxqgl';
 
-const REACT_APP_WEBSITE_URL = "https://maniv-pc.github.io"
+const REACT_APP_DEPLOYMENT_URL = "https://maniv-pc.github.io"
 
 interface ReferralValidation {
   isValid: boolean;
@@ -40,12 +39,6 @@ interface ReferralValidation {
   discountApplied?: boolean;
   discountPercentage?: number;
  }
- 
-interface ReferralData {
-  code: string;
-  discount_percentage: number; 
-  used: boolean;
-}
 
 export const OfferPage = () => {
   // Form state
@@ -336,7 +329,7 @@ export const OfferPage = () => {
                           `הרכבה בכתובת: ${street || ''}, ${city || ''}` :
                           `משלוח לכתובת: ${street || ''}, ${city || ''}`,
           delivery_type: deliveryType || 'לא צוין',
-          main_website: REACT_APP_WEBSITE_URL,
+          main_website: REACT_APP_DEPLOYMENT_URL,
           discount_applied: referralValidation.discountApplied ? '20%' : 'לא'
         };
 

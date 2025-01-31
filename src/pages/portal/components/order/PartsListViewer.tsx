@@ -81,7 +81,6 @@ const PERIPHERALS_MAP = {
 } as const;
 
 type SingleChoiceComponentType = typeof SINGLE_CHOICE_COMPONENTS[keyof typeof SINGLE_CHOICE_COMPONENTS];
-type MultiChoiceComponentType = typeof MULTI_CHOICE_COMPONENTS[keyof typeof MULTI_CHOICE_COMPONENTS];
 type PeripheralType = keyof typeof PERIPHERALS_MAP;
 type PeripheralHebrewName = typeof PERIPHERALS_MAP[PeripheralType];
 type ComponentType = string | { type: 'peripheral'; name: string; peripheralType: PeripheralType; };
@@ -126,14 +125,6 @@ export const PartsListViewer: React.FC<PartsListViewerProps> = ({
         });
         return reversed;
     }, []);
-
-    const getPeripheralHebrewName = useCallback((type: PeripheralType): string => {
-        return PERIPHERALS_MAP[type];
-    }, []);
-
-    const getPeripheralEnglishName = useCallback((hebrewName: PeripheralHebrewName): PeripheralType => {
-        return reversePeripheralsMap[hebrewName];
-    }, [reversePeripheralsMap]);
 
     const isPeripheralItem = useCallback((part: PartsListItem): boolean => {
         // If it's explicitly marked as peripheral type
@@ -255,9 +246,7 @@ export const PartsListViewer: React.FC<PartsListViewerProps> = ({
 
     // Budget calculations
     const hardwareBudgetLimit = useMemo(() => totalBudget * 1.03, [totalBudget]);
-    const hardwareBudgetMinimum = useMemo(() => totalBudget * 0.98, [totalBudget]);
     const peripheralsBudgetLimit = useMemo(() => peripheralsBudget * 1.03, [peripheralsBudget]);
-    const peripheralsBudgetMinimum = useMemo(() => peripheralsBudget * 0.98, [peripheralsBudget]);
 
     // Effects
     useEffect(() => {

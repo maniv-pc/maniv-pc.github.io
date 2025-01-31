@@ -1,21 +1,24 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import { createClient, Session, User } from '@supabase/supabase-js';
 import { AuthContextType, AuthMetadata } from './types';
+import { getConfig, getBaseUrl } from '../../config';
 
-if (!process.env.REACT_APP_SUPABASE_URL || !process.env.REACT_APP_SUPABASE_ANON_KEY) {
+const config = getConfig();
+
+if (!config.supabaseUrl || !config.supabaseAnonKey) {
   throw new Error('Missing Supabase environment variables');
 }
 
 export const supabase = createClient(
-    process.env.REACT_APP_SUPABASE_URL, 
-    process.env.REACT_APP_SUPABASE_ANON_KEY, 
+    config.supabaseUrl,
+    config.supabaseAnonKey,
     {
       auth: {
         persistSession: true,
         autoRefreshToken: true,
       }
     }
-  );
+);
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -133,7 +136,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                         throw new Error('Unauthorized access');
                     }
                     
-                    await fetch('/api/send-admin-alert', {
+                    const baseUrl = getBaseUrl();
+                    await fetch(`${baseUrl}/api/send-admin-alert`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
@@ -154,15 +158,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             throw error;
         }
     };
-
-    const getBaseUrl = () => {
-        // אם אנחנו בפריסה, נשתמש בדומיין של GitHub Pages
-        if (process.env.REACT_APP_DEPLOYMENT_URL) {
-            return process.env.REACT_APP_DEPLOYMENT_URL;
-        }
-        // אחרת, נשתמש ב-origin הרגיל
-        return window.location.origin;
-    };
     
     const signInWithGoogle = async (role?: 'Admin' | 'Customer'): Promise<void> => {
         try {
@@ -170,9 +165,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             const { error } = await supabase.auth.signInWithOAuth({
                 provider: 'google',
                 options: {
-                    redirectTo: role === 'Admin' 
-                        ? `${baseUrl}/admin` 
-                        : `${baseUrl}/portal`,
+                    redirectTo: `${baseUrl}/#/${role === 'Admin' ? 'admin' : 'portal'}`,
                     queryParams: {
                         access_type: 'offline',
                         prompt: 'consent',
@@ -190,9 +183,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     const resetPassword = async (email: string) => {
         try {
-            const { error } = await supabase.auth.resetPasswordForEmail(email, {
-                redirectTo: `${window.location.origin}/reset-password`
-            });
+            const baseUrl = getBaseUrl();
+            const { error } = await supabase.auth.resetPasswordForEmail(
+                email,
+                {
+                    redirectTo: `${baseUrl}/#/reset-password`
+                }
+            );
             if (error) throw error;
         } catch (error) {
             console.error('Error resetting password:', error);

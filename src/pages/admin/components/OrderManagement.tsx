@@ -4,10 +4,11 @@ import { Button } from 'components/ui/button';
 import { Input } from 'components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from 'components/ui/select';
 import { Alert, AlertDescription } from 'components/ui/alert';
+import { Badge } from 'components/ui/badge';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from 'components/ui/dialog';
 import { supabase } from 'context/auth';
 import { AdminPaymentVerification } from './AdminPaymentVerification';
 import { PartsListViewer } from '../../portal/components/order/PartsListViewer';
-import { BuildScheduler } from '../../portal/components/order/BuildScheduler';
 import { PreferencesData } from 'types/preferences';
 import type { Order, OrderStatus, Filters } from '../types/order';
 import emailjs from '@emailjs/browser'
@@ -51,6 +52,7 @@ export const OrderManagement: React.FC<OrderManagementProps> = ({
   const [showScheduler, setShowScheduler] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [filteredOrders, setFilteredOrders] = useState<Order[]>(orders);
+  const [showScheduleOverview, setShowScheduleOverview] = useState(false);
 
   useEffect(() => {
     const filtered = orders.filter(order => {
@@ -75,6 +77,21 @@ export const OrderManagement: React.FC<OrderManagementProps> = ({
         'schedule_pending_approval', 'building', 'ready', 
         'cancellation_pending'].includes(order.status)
     )
+  };
+
+  const getScheduledOrders = () => {
+    return orders.filter(order => 
+        order.build_date && ['schedule_pending_approval', 'building'].includes(order.status)
+    ).map(order => ({
+        date: new Date(order.build_date),
+        customerName: order.offers?.full_name || '',
+        orderId: order.id,
+        location: order.offers?.delivery_type === 'build_at_home' 
+            ? `${order.offers.address}, ${order.offers.city}`
+            : 'איסוף עצמי',
+        status: order.status,
+        isWeekend: order.weekend_fee_applied
+    }));
   };
 
   const handleUpdateStatus = async (orderId: string, newStatus: OrderStatus) => {
@@ -145,17 +162,36 @@ export const OrderManagement: React.FC<OrderManagementProps> = ({
 
   const handleScheduleApproval = async (orderId: string, approved: boolean) => {
     try {
-      const { error } = await supabase
-        .from('authenticated_orders')
-        .update({
-          status: approved ? 'building' : 'pending_schedule'
-        })
-        .eq('id', orderId);
+        if (approved) {
+            // אישור המועד המוצע
+            const { error } = await supabase
+                .from('authenticated_orders')
+                .update({
+                    status: 'building',
+                    updated_at: new Date().toISOString()
+                })
+                .eq('id', orderId);
 
-      if (error) throw error;
-      await fetchOrders();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred');
+            if (error) throw error;
+        } else {
+            // דחיית המועד המוצע - חזרה למצב הקודם
+            const { error } = await supabase
+                .from('authenticated_orders')
+                .update({
+                    status: 'pending_schedule',
+                    build_date: null,
+                    weekend_fee_applied: false,
+                    proposed_by: null,
+                    updated_at: new Date().toISOString()
+                })
+                .eq('id', orderId);
+
+            if (error) throw error;
+        }
+        await fetchOrders();
+    } catch (error) {
+        console.error('Error handling schedule approval:', error);
+        throw error;
     }
   };
 
@@ -282,19 +318,45 @@ export const OrderManagement: React.FC<OrderManagementProps> = ({
                 </Button>
               )}
               {order.status === 'schedule_pending_approval' && (
-                <div className="flex gap-2">
-                  <Button
-                    onClick={() => handleScheduleApproval(order.id, true)}
-                    className="bg-green-600"
-                  >
-                    אשר הצעת לו"ז
-                  </Button>
-                  <Button
-                    onClick={() => handleScheduleApproval(order.id, false)}
-                    className="bg-red-600"
-                  >
-                    דחה הצעת לו"ז
-                  </Button>
+                <div className="mt-4 p-4 bg-gray-700/50 rounded">
+                    <div className="text-sm text-gray-300 mb-2">
+                        {order.proposed_by === 'customer' ? 'מועד מוצע ע"י הלקוח:' : 'מועד מוצע ע"י המערכת:'}
+                    </div>
+                    
+                    <div className="font-medium text-white mb-2">
+                        {new Date(order.build_date).toLocaleDateString('he-IL')} בשעה {' '}
+                        {new Date(order.build_date).toLocaleTimeString('he-IL', {
+                            hour: '2-digit',
+                            minute: '2-digit'
+                        })}
+                    </div>
+
+                    <div className="text-gray-400 mb-4">
+                        מיקום: {order.offers?.delivery_type === 'build_at_home' 
+                            ? `${order.offers.address}, ${order.offers.city}`
+                            : 'איסוף עצמי'
+                        }
+                        {order.weekend_fee_applied && (
+                            <span className="text-amber-400 mr-2">
+                                (כולל תוספת סופ"ש)
+                            </span>
+                        )}
+                    </div>
+
+                    <div className="flex gap-2">
+                        <Button
+                            onClick={() => handleScheduleApproval(order.id, true)}
+                            className="bg-green-600"
+                        >
+                            אשר מועד
+                        </Button>
+                        <Button
+                            onClick={() => handleScheduleApproval(order.id, false)}
+                            className="bg-red-600"
+                        >
+                            דחה מועד
+                        </Button>
+                    </div>
                 </div>
               )}
               {order.status === 'building' && (
@@ -326,16 +388,23 @@ export const OrderManagement: React.FC<OrderManagementProps> = ({
       </CardContent>
     </Card>
   );
-
   
   return (
-    <div className="space-y-6" dir="rtl"> {/* Added RTL support */}
+    <div className="space-y-6" dir="rtl">
       {error && (
-        <Alert variant="destructive">
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
+          <Alert variant="destructive">
+              <AlertDescription>{error}</AlertDescription>
+          </Alert>
       )}
 
+      <div className="mb-6">
+          <Button 
+              onClick={() => setShowScheduleOverview(true)}
+              className="bg-blue-600 hover:bg-blue-700 mb-4"
+          >
+              צפה בלוח זמנים מרוכז
+          </Button>
+      </div>
       <div className="grid grid-cols-4 gap-4">
         <Input 
           placeholder="סנן לפי שם"
@@ -404,6 +473,58 @@ export const OrderManagement: React.FC<OrderManagementProps> = ({
           preferences={selectedOrder.offers?.preferences as PreferencesData}
           peripheralsBudget={selectedOrder.offers?.peripherals_budget || 0}
         />
+      )}
+
+      {showScheduleOverview && (
+        <Dialog
+            open={showScheduleOverview}
+            onOpenChange={setShowScheduleOverview}
+        >
+            <DialogContent className="bg-gray-800 text-white max-w-4xl">
+                <DialogHeader>
+                    <DialogTitle>לוח זמנים - הרכבות מתוכננות</DialogTitle>
+                </DialogHeader>
+                
+                <div className="space-y-4">
+                    {getScheduledOrders().sort((a, b) => a.date.getTime() - b.date.getTime()).map(schedule => (
+                        <div 
+                          key={schedule.orderId}
+                          className="p-4 bg-gray-700 rounded flex justify-between items-center"
+                          dir="rtl"
+                        >
+                          <div className="space-y-1">
+                              <div className="font-medium">
+                                  {schedule.date.toLocaleDateString('he-IL')} {' '}
+                                  {schedule.date.toLocaleTimeString('he-IL', {
+                                      hour: '2-digit',
+                                      minute: '2-digit'
+                                  })}
+                              </div>
+                              <div className="text-sm text-gray-300">
+                                  {schedule.customerName} - הזמנה {schedule.orderId.slice(-6)}
+                              </div>
+                              <div className="text-sm text-gray-400">
+                                  {schedule.location}
+                                  {schedule.isWeekend && (
+                                      <span className="text-amber-400 mr-2">
+                                          (תעריף סופ"ש)
+                                      </span>
+                                  )}
+                              </div>
+                          </div>
+                          
+                          <Badge
+                              className={`${schedule.status === 'building' 
+                                  ? 'bg-green-600' 
+                                  : 'bg-yellow-600'} mr-auto`}
+                          >
+                              {schedule.status === 'building' ? 'מאושר' : 'ממתין לאישור'}
+                          </Badge>
+                      </div>
+                    ))}
+                </div>
+            </DialogContent>
+        </Dialog>
       )}
     </div>
   );
