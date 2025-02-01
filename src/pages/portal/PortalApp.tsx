@@ -31,6 +31,19 @@ export const PortalApp = () => {
         return false;
     });
     const [referrals, setReferrals] = useState<Referral[]>([]);
+    
+    // This effect runs whenever user changes
+    useEffect(() => {
+        console.log('User Changed in Portal:', { hasUser: !!user });
+        if (user) {
+            fetchData().catch(error => {
+                console.error('User change fetch failed:', error);
+                setError(error.message);
+            });
+        } else {
+            setIsLoading(false);
+        }
+    }, [user]); // Dependency on user
 
     const fetchData = useCallback(async () => {
         if (!user) return;
@@ -48,19 +61,6 @@ export const PortalApp = () => {
             setIsLoading(false);
         }
     }, [user]);
-
-    useEffect(() => {
-        if (user) {
-            fetchData()
-                .catch(error => {
-                    console.error('Fetch data failed:', error);
-                    setError(error.message);
-                    setIsLoading(false);
-                });
-        } else {
-            setIsLoading(false);
-        }
-    }, [user, fetchData]);
 
     useEffect(() => {
         const root = document.documentElement;
@@ -490,12 +490,17 @@ export const PortalApp = () => {
     };
 
     const handleLogout = async () => {
-        if (!isSigningOut) {  // prevent multiple clicks
-          await signOut();
+        console.log('Logout initiated');
+        if (!isSigningOut) {
+            try {
+                await signOut();
+                // console.log('Logout completed');
+            } catch (error) {
+                console.error('Logout failed:', error);
+            }
         }
     };
 
-    // Auth UI
     if (!user) {
         return (
             <div className="min-h-screen bg-gradient-to-b from-purple-900 to-blue-950 flex items-center justify-center p-4">
