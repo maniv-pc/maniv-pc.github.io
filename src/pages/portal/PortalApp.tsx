@@ -5,7 +5,6 @@ import { Button } from 'components/ui/button';
 import { Switch } from 'components/ui/switch';
 import { Label } from 'components/ui/label';
 import { Alert, AlertDescription} from 'components/ui/alert'
-import LoadingSpinner from 'components/common/LoadingSpinner'
 
 // Component imports
 import { AuthForm } from './components/auth/AuthForm';
@@ -34,33 +33,67 @@ export const PortalApp = () => {
     
     // This effect runs whenever user changes
     useEffect(() => {
-        console.log('User Changed in Portal:', { hasUser: !!user });
-        if (user) {
-            fetchData().catch(error => {
-                console.error('User change fetch failed:', error);
-                setError(error.message);
-            });
-        } else {
-            setIsLoading(false);
-        }
-    }, [user]); // Dependency on user
+        let mounted = true;
+    
+        const clearPerformanceEntries = () => {
+            const entries = performance.getEntriesByType('mark')
+                .concat(performance.getEntriesByType('measure'));
+            entries.forEach(entry => performance.clearMarks(entry.name));
+        };
 
-    const fetchData = useCallback(async () => {
-        if (!user) return;
-        
-        try {
-            await Promise.all([
-                updateUserRole(),
-                fetchOrders(),
-                fetchReferrals()
-            ]);
-        } catch (error) {
-            console.error('Error fetching data:', error);
-            setError((error as Error).message);
-        } finally {
-            setIsLoading(false);
-        }
-    }, [user]);
+        const initializeData = async () => {
+            console.log('User Changed in Portal:', { 
+                hasUser: !!user,
+                userId: user?.id 
+            });
+
+            if (!user) {
+                setIsLoading(false);
+                return;
+            }
+
+            try {
+                console.log('Starting fetch data...');
+                setIsLoading(true);
+
+                // Only proceed if component is still mounted
+                if (!mounted) return;
+
+                console.log('Fetching user role...');
+                await updateUserRole();
+
+                if (!mounted) return;
+
+                console.log('Fetching orders...');
+                await fetchOrders();
+
+                if (!mounted) return;
+
+                console.log('Fetching referrals...');
+                await fetchReferrals();
+
+                console.log('All data fetched successfully');
+            } catch (error) {
+                if (mounted) {
+                    console.error('User change fetch failed:', error);
+                    setError((error as Error).message);
+                }
+            } finally {
+                if (mounted) {
+                    setIsLoading(false);
+                }
+            }
+        };
+
+        clearPerformanceEntries(); // נקה מדידות קודמות
+        initializeData();
+
+        // Cleanup function
+        return () => {
+            mounted = false;
+            clearPerformanceEntries();
+        };
+    }, [user]); // Dependency on user
 
     useEffect(() => {
         const root = document.documentElement;
@@ -76,25 +109,43 @@ export const PortalApp = () => {
     
     const updateUserRole = async () => {
         try {
-            // בדוק אם יש הצעות מחיר למשתמש
-            const { data: offers, error: offersError } = await supabase
-                .from('offers')
-                .select('id')
-                .eq('email', user?.email)
-                .limit(1);
+            const timerName = 'updateUserRole';
+            // אם הטיימר כבר קיים, לא נריץ שוב
+            if (performance.getEntriesByName(timerName).length > 0) {
+                console.log(`${timerName} already running`);
+                return;
+            }
+            
+            performance.mark(`${timerName}-start`);
     
-            if (offersError) throw offersError;
+            // Get offers and update role in parallel
+            const [offersResponse, currentProfileResponse] = await Promise.all([
+                supabase
+                    .from('offers')
+                    .select('id')
+                    .eq('email', user?.email)
+                    .limit(1),
+                supabase
+                    .from('profiles')
+                    .select('role')
+                    .eq('id', user?.id)
+                    .single()
+            ]);
     
-            // קבע את התפקיד בהתאם
-            const role = offers && offers.length > 0 ? 'Customer' : 'NotRelated';
+            if (offersResponse.error) throw offersResponse.error;
+            
+            // Only update role if it's different from current
+            const newRole = offersResponse.data && offersResponse.data.length > 0 ? 'Customer' : 'NotRelated';
+            
+            if (!currentProfileResponse.error && currentProfileResponse.data?.role !== newRole) {
+                await supabase
+                    .from('profiles')
+                    .update({ role: newRole })
+                    .eq('id', user?.id);
+            }
     
-            // עדכן את הפרופיל
-            const { error: updateError } = await supabase
-                .from('profiles')
-                .update({ role })
-                .eq('id', user?.id);
-    
-            if (updateError) throw updateError;
+            performance.mark(`${timerName}-end`);
+            performance.measure(timerName, `${timerName}-start`, `${timerName}-end`);
     
         } catch (error) {
             console.error('Error updating user role:', error);
@@ -103,119 +154,128 @@ export const PortalApp = () => {
 
     const fetchOrders = async () => {
         try {
-            // Get global preferences first
-            const { data: globalPrefs, error: globalError } = await supabase
-                .from('profiles')
-                .select('preferences, peripherals_budget')
-                .eq('id', user?.id)
-                .single();
+            console.time('fetchOrders');
+            
+            // Run all initial queries in parallel
+            const [globalPrefsResponse, pendingOffersResponse, authOrdersResponse] = await Promise.all([
+                supabase
+                    .from('profiles')
+                    .select('preferences, peripherals_budget')
+                    .eq('id', user?.id)
+                    .single(),
+                    
+                supabase
+                    .from('offers')
+                    .select(`
+                        id,
+                        created_at,
+                        status,
+                        budget,
+                        preferences,
+                        peripherals_budget,
+                        service_cost,
+                        service_type,
+                        use_types,
+                        operating_system,
+                        delivery_type,
+                        address,
+                        city,
+                        game_resolution,
+                        video_software
+                    `)
+                    .eq('email', user?.email)
+                    .eq('status', 'pending'),
+                    
+                supabase
+                    .from('authenticated_orders')
+                    .select(`
+                        *,
+                        offers!inner (
+                            id,
+                            budget,
+                            service_cost,
+                            preferences,
+                            peripherals_budget,
+                            service_type,
+                            use_types,
+                            operating_system,
+                            game_resolution,
+                            video_software,
+                            delivery_type,
+                            address,
+                            city
+                        )
+                    `)
+                    .eq('user_id', user?.id)
+            ]);
     
-            if (globalError) throw globalError;
+            console.log('Initial queries complete', {
+                globalPrefs: !!globalPrefsResponse.data,
+                pendingOffers: pendingOffersResponse.data?.length,
+                authOrders: authOrdersResponse.data?.length
+            });
     
-            // Get pending offers with their preferences
-            const { data: pendingOffers, error: pendingOffersError } = await supabase
-                .from('offers')
-                .select(`
-                    *,
-                    preferences,
-                    peripherals_budget,
-                    service_cost
-                `)
-                .eq('email', user?.email)
-                .eq('status', 'pending');
+            if (globalPrefsResponse.error) throw globalPrefsResponse.error;
+            if (pendingOffersResponse.error) throw pendingOffersResponse.error;
+            if (authOrdersResponse.error) throw authOrdersResponse.error;
     
-            if (pendingOffersError) throw pendingOffersError;
+            const globalPrefs = globalPrefsResponse.data;
     
             // Transform offers with proper preference handling
-            const transformedOffers = (pendingOffers || []).map(offer => {
-                // Merge preferences, prioritizing offer-specific ones
-                const effectivePreferences = {
+            const transformedOffers = (pendingOffersResponse.data || []).map(offer => ({
+                ...offer,
+                status: 'pending' as const,
+                paid_amount: 0,
+                preferences: {
                     parts_source: [],
                     existing_hardware: [],
                     custom_sources: [],
                     custom_peripherals: [],
                     ...(globalPrefs?.preferences || {}),
                     ...(offer.preferences || {})
-                };
-            
-                // Get effective peripherals budget - prioritize offer-specific, then global
-                const effectivePeripheralsBudget = offer.peripherals_budget ?? globalPrefs?.peripherals_budget ?? 0;
-            
-                return {
-                    ...offer,
-                    status: 'pending' as const,
-                    paid_amount: 0,
-                    preferences: effectivePreferences,
-                    peripherals_budget: effectivePeripheralsBudget
-                };
-            });
-    
-            // Handle authenticated orders
-            const { data: authOrders, error: authError } = await supabase
-                .from('authenticated_orders')
-                .select(`
-                    *,
-                    offers!inner (
-                        id,
-                        budget,
-                        service_cost,
-                        preferences,
-                        peripherals_budget,
-                        service_type,
-                        use_types,
-                        operating_system,
-                        game_resolution,
-                        video_software,
-                        delivery_type,
-                        address,
-                        city
-                    )
-                `)
-                .eq('user_id', user?.id);
-    
-            if (authError) throw authError;
+                },
+                peripherals_budget: offer.peripherals_budget ?? globalPrefs?.peripherals_budget ?? 0
+            }));
     
             // Transform authenticated orders
-            const transformedAuthOrders = (authOrders || []).map(order => {
-                // Merge preferences from global and offer
-                const effectivePreferences = {
+            const transformedAuthOrders = (authOrdersResponse.data || []).map(order => ({
+                id: order.id,
+                offer_id: order.offer_id,
+                created_at: order.created_at,
+                status: order.status,
+                budget: order.offers.budget,
+                service_cost: order.offers.service_cost,
+                paid_amount: order.paid_amount || 0,
+                service_type: order.offers.service_type,
+                use_types: order.offers.use_types || [],
+                operating_system: order.offers.operating_system,
+                delivery_type: order.offers.delivery_type,
+                address: order.offers.address,
+                city: order.offers.city,
+                game_resolution: order.offers.game_resolution,
+                video_software: order.offers.video_software,
+                parts_list: order.parts_list,
+                build_date: order.build_date,
+                payment_method: order.payment_method,
+                preferences: {
                     parts_source: [],
                     existing_hardware: [],
                     custom_sources: [],
                     custom_peripherals: [],
                     ...(globalPrefs?.preferences || {}),
                     ...(order.offers?.preferences || {})
-                };
-    
-                return {
-                    id: order.id,
-                    offer_id: order.offer_id,
-                    created_at: order.created_at,
-                    status: order.status,
-                    budget: order.offers.budget,
-                    service_cost: order.offers.service_cost, // Use the service_cost from offers
-                    paid_amount: order.paid_amount || 0,
-                    service_type: order.offers.service_type,
-                    use_types: order.offers.use_types || [],
-                    operating_system: order.offers.operating_system,
-                    delivery_type: order.offers.delivery_type,
-                    address: order.offers.address,
-                    city: order.offers.city,
-                    game_resolution: order.offers.game_resolution,
-                    video_software: order.offers.video_software,
-                    parts_list: order.parts_list,
-                    build_date: order.build_date,
-                    payment_method: order.payment_method,
-                    preferences: effectivePreferences,
-                    peripherals_budget: order.offers.peripherals_budget // Use peripherals_budget from offers
-                };
-            });
+                },
+                peripherals_budget: order.offers.peripherals_budget
+            }));
     
             // Combine and set orders
             setOrders([...transformedOffers, ...transformedAuthOrders]);
+            
+            console.timeEnd('fetchOrders');
         } catch (error: any) {
             console.error("Error fetching orders:", error);
             setError(error.message);
+            throw error; // Re-throw to be caught by fetchData
         }
     };
     
@@ -510,208 +570,204 @@ export const PortalApp = () => {
     }
 
     // Main Portal UI
+
+    if (isLoading) return null;
+    
     return (
-        isLoading ? (
-            <div className="flex items-center justify-center min-h-screen">
-                <LoadingSpinner />
-            </div>
-        ) : (
-            <div className={`min-h-screen p-4 ${darkMode ? 'dark bg-gradient-to-b from-gray-900 to-black' : 'bg-gradient-to-b from-purple-900 to-blue-950'}`}>
-                <div className="container mx-auto">
-                    <div className="flex justify-between mb-4" dir="rtl">
-                        <div className={`flex items-center space-x-2 ${darkMode ? 'bg-gray-800/50' : 'bg-white/10'} p-2 rounded backdrop-blur-sm`}>
-                            <Switch
-                                id="dark-mode"
-                                checked={darkMode}
-                                onCheckedChange={setDarkMode}
-                                className="data-[state=checked]:bg-white data-[state=checked]:text-black"
-                            />
-                            <Label htmlFor="dark-mode" className="text-white mr-2">מצב כהה</Label>
-                        </div>
-                        <Button 
-                            onClick={handleLogout} 
-                            disabled={isSigningOut}
-                            className={`bg-white/10 hover:bg-white/20 backdrop-blur-sm text-white ${
-                                isSigningOut ? 'opacity-50 cursor-not-allowed' : ''
-                            }`}
-                        >
-                            {isSigningOut ? 'מתנתק...' : 'התנתק'}
-                        </Button>
+        <div className={`min-h-screen p-4 ${darkMode ? 'dark bg-gradient-to-b from-gray-900 to-black' : 'bg-gradient-to-b from-purple-900 to-blue-950'}`}>
+            <div className="container mx-auto">
+                <div className="flex justify-between mb-4" dir="rtl">
+                    <div className={`flex items-center space-x-2 ${darkMode ? 'bg-gray-800/50' : 'bg-white/10'} p-2 rounded backdrop-blur-sm`}>
+                        <Switch
+                            id="dark-mode"
+                            checked={darkMode}
+                            onCheckedChange={setDarkMode}
+                            className="data-[state=checked]:bg-white data-[state=checked]:text-black"
+                        />
+                        <Label htmlFor="dark-mode" className="text-white mr-2">מצב כהה</Label>
                     </div>
+                    <Button 
+                        onClick={handleLogout} 
+                        disabled={isSigningOut}
+                        className={`bg-white/10 hover:bg-white/20 backdrop-blur-sm text-white ${
+                            isSigningOut ? 'opacity-50 cursor-not-allowed' : ''
+                        }`}
+                    >
+                        {isSigningOut ? 'מתנתק...' : 'התנתק'}
+                    </Button>
+                </div>
 
-                    <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-                        <TabsList className="bg-white/10 backdrop-blur-sm w-full justify-center">
-                            <TabsTrigger value="orders" className="text-white data-[state=active]:bg-white/20">
-                                הזמנות
-                            </TabsTrigger>
-                            <TabsTrigger value="preferences" className="text-white data-[state=active]:bg-white/20">
-                                העדפות
-                            </TabsTrigger>
-                            <TabsTrigger value="payments" className="text-white data-[state=active]:bg-white/20">
-                                תשלומים
-                            </TabsTrigger>
-                            <TabsTrigger value="referrals" className="text-white data-[state=active]:bg-white/20">
-                                הפניות
-                            </TabsTrigger>
-                        </TabsList>
+                <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
+                    <TabsList className="bg-white/10 backdrop-blur-sm w-full justify-center">
+                        <TabsTrigger value="orders" className="text-white data-[state=active]:bg-white/20">
+                            הזמנות
+                        </TabsTrigger>
+                        <TabsTrigger value="preferences" className="text-white data-[state=active]:bg-white/20">
+                            העדפות
+                        </TabsTrigger>
+                        <TabsTrigger value="payments" className="text-white data-[state=active]:bg-white/20">
+                            תשלומים
+                        </TabsTrigger>
+                        <TabsTrigger value="referrals" className="text-white data-[state=active]:bg-white/20">
+                            הפניות
+                        </TabsTrigger>
+                    </TabsList>
 
-                        <TabsContent value="orders">
-                            <div className="space-y-4" dir="rtl">
-                                {/* Price Quotes/Offers Section */}
-                                <h2 className="text-2xl font-bold text-white text-right">הצעות מחיר</h2>
-                                {orders
-                                .filter(order => order.status === 'pending')
-                                .map(order => (
-                                    <>
-                                        {orders.length === 0 && (
-                                            <Alert className="mb-4">
-                                                <AlertDescription>
-                                                    יש לבדוק את ההעדפות לפני אישור הצעת המחיר
-                                                </AlertDescription>
-                                            </Alert>
-                                        )}
+                    <TabsContent value="orders">
+                        <div className="space-y-4" dir="rtl">
+                            {/* Price Quotes/Offers Section */}
+                            <h2 className="text-2xl font-bold text-white text-right">הצעות מחיר</h2>
+                            {orders
+                            .filter(order => order.status === 'pending')
+                            .map(order => (
+                                <React.Fragment key={order.id}>
+                                    {orders.length === 0 && (
+                                        <Alert className="mb-4">
+                                            <AlertDescription>
+                                                יש לבדוק את ההעדפות לפני אישור הצעת המחיר
+                                            </AlertDescription>
+                                        </Alert>
+                                    )}
+                                    <OrderCard
+                                        order={order}
+                                        onApprove={handleApproveOrder}
+                                        onCancel={handleCancelOrder}
+                                        darkMode={darkMode}
+                                        onOrderUpdate={fetchOrders}
+                                        onPaymentClick={() => setActiveTab('payments')}
+                                        preferences={order.preferences}
+                                        peripheralsBudget={order.peripherals_budget}
+                                    />
+                                </React.Fragment>
+                            ))
+                        }
+                            
+                            <h2 className="text-2xl font-bold text-white text-right">הזמנות בתהליך</h2>
+                            {/* In-Process Orders Section */}
+                            {orders
+                                .filter(order => [
+                                    'approved',
+                                    'pending_initial_list',
+                                    'pending_consultation_payment',
+                                    'pending_parts_upload',
+                                    'pending_schedule',
+                                    'schedule_pending_approval',
+                                    'building'
+                                ].includes(order.status))
+                                .map(order => {
+                                    return (
                                         <OrderCard
                                             key={order.id}
                                             order={order}
-                                            onApprove={handleApproveOrder}
                                             onCancel={handleCancelOrder}
                                             darkMode={darkMode}
                                             onOrderUpdate={fetchOrders}
+                                            onSchedule={(date) => handleOrderSchedule(date, order.id)}  // הוספנו את זה
                                             onPaymentClick={() => setActiveTab('payments')}
                                             preferences={order.preferences}
                                             peripheralsBudget={order.peripherals_budget}
                                         />
-                                    </>
+                                    );
+                                })
+                            }
+                            
+                            <h2 className="text-2xl font-bold text-white text-right">הזמנות שהושלמו</h2>
+                            {/* Completed Orders Section */}
+                            {orders
+                                .filter(order => ['ready', 'delivered'].includes(order.status))
+                                .map(order => (
+                                    <OrderCard
+                                        key={order.id}
+                                        order={order}
+                                        onCancel={handleCancelOrder}
+                                        darkMode={darkMode}
+                                        onOrderUpdate={fetchOrders}
+                                        onPaymentClick={() => setActiveTab('payments')}
+                                        preferences={order.preferences}
+                                        peripheralsBudget={order.peripherals_budget}
+                                    />
                                 ))
                             }
+
+                            {/* Cancelled Orders Section - New */}
+                            {orders.some(order => {
+                                if (!['cancelled', 'cancellation_pending'].includes(order.status)) return false;
+                                if (!order.cancelled_at) return false;
                                 
-                                <h2 className="text-2xl font-bold text-white text-right">הזמנות בתהליך</h2>
-                                {/* In-Process Orders Section */}
-                                {orders
-                                    .filter(order => [
-                                        'approved',
-                                        'pending_initial_list',
-                                        'pending_consultation_payment',
-                                        'pending_parts_upload',
-                                        'pending_schedule',
-                                        'schedule_pending_approval',
-                                        'building'
-                                    ].includes(order.status))
-                                    .map(order => {
-                                        return (
+                                const cancelDate = new Date(order.cancelled_at);
+                                const weekAgo = new Date();
+                                weekAgo.setDate(weekAgo.getDate() - 7);
+                                
+                                return cancelDate > weekAgo;
+                            }) && (
+                                <>
+                                    <h2 className="text-2xl font-bold text-white text-right mt-8">
+                                        הזמנות שבוטלו
+                                    </h2>
+                                    {orders
+                                        .filter(order => {
+                                            if (!['cancelled', 'cancellation_pending'].includes(order.status)) return false;
+                                            if (!order.cancelled_at) return false;
+                                            
+                                            const cancelDate = new Date(order.cancelled_at);
+                                            const weekAgo = new Date();
+                                            weekAgo.setDate(weekAgo.getDate() - 7);
+                                            
+                                            return cancelDate > weekAgo;
+                                        })
+                                        .map(order => (
                                             <OrderCard
                                                 key={order.id}
                                                 order={order}
-                                                onCancel={handleCancelOrder}
                                                 darkMode={darkMode}
                                                 onOrderUpdate={fetchOrders}
-                                                onSchedule={(date) => handleOrderSchedule(date, order.id)}  // הוספנו את זה
-                                                onPaymentClick={() => setActiveTab('payments')}
                                                 preferences={order.preferences}
                                                 peripheralsBudget={order.peripherals_budget}
                                             />
-                                        );
-                                    })
-                                }
-                                
-                                <h2 className="text-2xl font-bold text-white text-right">הזמנות שהושלמו</h2>
-                                {/* Completed Orders Section */}
-                                {orders
-                                    .filter(order => ['ready', 'delivered'].includes(order.status))
-                                    .map(order => (
-                                        <OrderCard
-                                            key={order.id}
-                                            order={order}
-                                            onCancel={handleCancelOrder}
-                                            darkMode={darkMode}
-                                            onOrderUpdate={fetchOrders}
-                                            onPaymentClick={() => setActiveTab('payments')}
-                                            preferences={order.preferences}
-                                            peripheralsBudget={order.peripherals_budget}
-                                        />
-                                    ))
-                                }
+                                        ))
+                                    }
+                                </>
+                            )}
+                        </div>
+                    </TabsContent>
 
-                                {/* Cancelled Orders Section - New */}
-                                {orders.some(order => {
-                                    if (!['cancelled', 'cancellation_pending'].includes(order.status)) return false;
-                                    if (!order.cancelled_at) return false;
-                                    
-                                    const cancelDate = new Date(order.cancelled_at);
-                                    const weekAgo = new Date();
-                                    weekAgo.setDate(weekAgo.getDate() - 7);
-                                    
-                                    return cancelDate > weekAgo;
-                                }) && (
-                                    <>
-                                        <h2 className="text-2xl font-bold text-white text-right mt-8">
-                                            הזמנות שבוטלו
-                                        </h2>
-                                        {orders
-                                            .filter(order => {
-                                                if (!['cancelled', 'cancellation_pending'].includes(order.status)) return false;
-                                                if (!order.cancelled_at) return false;
-                                                
-                                                const cancelDate = new Date(order.cancelled_at);
-                                                const weekAgo = new Date();
-                                                weekAgo.setDate(weekAgo.getDate() - 7);
-                                                
-                                                return cancelDate > weekAgo;
-                                            })
-                                            .map(order => (
-                                                <OrderCard
-                                                    key={order.id}
-                                                    order={order}
-                                                    darkMode={darkMode}
-                                                    onOrderUpdate={fetchOrders}
-                                                    preferences={order.preferences}
-                                                    peripheralsBudget={order.peripherals_budget}
-                                                />
-                                            ))
-                                        }
-                                    </>
-                                )}
-                            </div>
-                        </TabsContent>
+                    <TabsContent value="preferences">
+                        <PreferencesForm
+                            darkMode={darkMode}
+                            orders={orders}
+                            userId={user.id}
+                            onOrdersUpdate={fetchOrders}
+                        />
+                    </TabsContent>
 
-                        <TabsContent value="preferences">
-                            <PreferencesForm
-                                darkMode={darkMode}
-                                orders={orders}
-                                userId={user.id}
-                                onOrdersUpdate={fetchOrders}
-                            />
-                        </TabsContent>
+                    <TabsContent value="payments">
+                        <PaymentDialog
+                            orders={orders.filter(order => 
+                                order.status === 'pending_consultation_payment' || 
+                                order.status === 'ready'
+                            )}
+                            darkMode={darkMode}
+                            onPaymentMethodChange={handlePaymentMethodChange}
+                            onTermsAgreement={handleTermsAgreement}
+                            onPaymentConfirm={handlePaymentConfirm}
+                            onOrderUpdate={fetchOrders}
+                        />
+                    </TabsContent>
 
-                        <TabsContent value="payments">
-                            <PaymentDialog
-                                orders={orders.filter(order => 
-                                    order.status === 'pending_consultation_payment' || 
-                                    order.status === 'ready'
-                                )}
-                                darkMode={darkMode}
-                                onPaymentMethodChange={handlePaymentMethodChange}
-                                onTermsAgreement={handleTermsAgreement}
-                                onPaymentConfirm={handlePaymentConfirm}
-                                onOrderUpdate={fetchOrders}
-                            />
-                        </TabsContent>
-
-                        <TabsContent value="referrals">
-                            <ReferralManager
-                                userId={user.id}
-                                userEmail={user.email}
-                                darkMode={darkMode}
-                                orders={orders}
-                                referrals={referrals}
-                                onCreateReferral={handleCreateReferral}
-                            />
-                        </TabsContent>
-                    </Tabs>
-                </div>
-        </div>
+                    <TabsContent value="referrals">
+                        <ReferralManager
+                            userId={user.id}
+                            userEmail={user.email}
+                            darkMode={darkMode}
+                            orders={orders}
+                            referrals={referrals}
+                            onCreateReferral={handleCreateReferral}
+                        />
+                    </TabsContent>
+                </Tabs>
+            </div>
+    </div>
     )
-    );
 }
 
 export default PortalApp;

@@ -31,9 +31,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const [isSigningOut, setIsSigningOut] = useState(false);
     const [authError, setAuthError] = useState<Error | null>(null);
 
+   // בקובץ index.tsx
     useEffect(() => {
         let mounted = true;
-    
+
         const handleAuthStateChange = async (event: string, session: Session | null) => {
             if (!mounted) return;
             
@@ -43,93 +44,36 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                 userExists: !!session?.user,
                 currentUrl: window.location.href
             });
-            
-            // Clean up URL if it contains OAuth code
-            if (window.location.search.includes('code=')) {
-                // Get the hash route
-                const hash = window.location.hash || '#/portal';
-                
-                // Clean URL by replacing current state
-                window.history.replaceState(
-                    {},
-                    document.title,
-                    `${window.location.pathname}${hash}`
-                );
-            }
-            
-            if (event === 'SIGNED_IN') {
-                console.log('Sign In Event:', {
-                    user: session?.user,
-                    provider: session?.user?.app_metadata?.provider
-                });
-                
+
+            // אם כבר ניסינו לנקות URL קודם, לא צריך שוב
+            if (!window.location.search.includes('code=')) {
                 setUser(session?.user || null);
-                
-                if (session?.user) {
-                    await maintainUserRole(session.user.id);
-                }
-            } else if (event === 'SIGNED_OUT') {
-                setUser(null);
             }
-            
-            if (mounted) setLoading(false);
         };
-    
+
         const initializeAuth = async () => {
-            try {
-                console.log('Auth Initialization:', {
-                    currentUrl: window.location.href,
-                    search: window.location.search,
-                    hash: window.location.hash
-                });
-                
-                const { data: { session }, error } = await supabase.auth.getSession();
-                
-                console.log('Session Check:', {
-                    hasSession: !!session,
-                    hasUser: !!session?.user,
-                    error
-                });
-                
-                if (error) throw error;
-                
-                if (session?.user && mounted) {
-                    setUser(session.user);
-                    await maintainUserRole(session.user.id);
-                }
-                
-                // Clean up URL if it contains OAuth code
-                if (window.location.search.includes('code=')) {
-                    // Get the hash route
-                    const hash = window.location.hash || '#/portal';
-                    
-                    // Clean URL by replacing current state
-                    window.history.replaceState(
-                        {},
-                        document.title,
-                        `${window.location.pathname}${hash}`
-                    );
-                }
-                
-            } catch (error) {
-                console.error('Auth initialization failed:', error);
-                if (mounted) {
-                    setLoading(false);
-                    setAuthError(error as Error);
-                }
-            } finally {
-                if (mounted) setLoading(false);
+            // הימנע מאתחול כפול אם כבר יש session
+            const { data: { session }, error } = await supabase.auth.getSession();
+            if (error) {
+                console.error('Failed to get session:', error);
+                return;
             }
+
+            if (session?.user) {
+                setUser(session.user);
+                return;
+            }
+
+            // רק אם אין session, המשך עם האתחול הרגיל
+            supabase.auth.onAuthStateChange(handleAuthStateChange);
         };
-    
-        const { data: { subscription } } = supabase.auth.onAuthStateChange(handleAuthStateChange);
+
         initializeAuth();
-    
+
         return () => {
             mounted = false;
-            subscription.unsubscribe();
         };
-    }, []);
+    }, []); // Remove dependencies to run only once
 
     const maintainUserRole = async (userId: string) => {
         try {
@@ -226,49 +170,43 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     const signInWithGoogle = async (role?: 'Admin' | 'Customer'): Promise<void> => {
         try {
-            const baseUrl = getBaseUrl();
-            const redirectPath = role === 'Admin' ? '/admin' : '/portal';
-            
-            // Make sure we only have one hash in the redirect URL
-            const redirectUrl = `${baseUrl}/#${redirectPath}`;
-            
-            console.log('OAuth Configuration:', {
-                baseUrl,
-                redirectPath,
-                redirectUrl,
-                environment: process.env.NODE_ENV
-            });
-            
-            const { data, error } = await supabase.auth.signInWithOAuth({
-                provider: 'google',
-                options: {
-                    redirectTo: redirectUrl,
-                    queryParams: {
-                        access_type: 'offline',
-                        prompt: 'consent'
-                    },
-                    scopes: 'email profile'
-                }
-            });
-            
-            if (error) {
-                console.error('OAuth Error:', error);
-                throw error;
+          const baseUrl = getBaseUrl();
+          const redirectPath = role === 'Admin' ? '/admin' : '/portal';
+          
+          // Make sure we only have one hash in the redirect URL
+          const redirectUrl = `${baseUrl}/#${redirectPath}`;
+          
+          const { data, error } = await supabase.auth.signInWithOAuth({
+            provider: 'google',
+            options: {
+              redirectTo: redirectUrl,
+              queryParams: {
+                access_type: 'offline',
+                prompt: 'consent'
+              },
+              scopes: 'email profile'
             }
-            
-            if (!data?.url) {
-                console.error('No OAuth URL returned');
-                throw new Error('No OAuth URL returned');
-            }
-            
-            console.log('Navigating to OAuth URL:', data.url);
-            window.location.href = data.url;
-            
+          });
+          
+          if (error) throw error;
+          
+          if (!data?.url) throw new Error('No OAuth URL returned');
+          
+          // Add loading state before redirect
+          setLoading(true);
+          
+          // Add small delay before redirect to ensure state is updated
+          await new Promise(resolve => setTimeout(resolve, 100));
+          
+          window.location.href = data.url;
+          
         } catch (error) {
-            console.error('Error in signInWithGoogle:', error);
-            throw error;
+          console.error('Error in signInWithGoogle:', error);
+          setAuthError(error as Error);
+          setLoading(false);
+          throw error;
         }
-    };
+      };
 
     const resetPassword = async (email: string) => {
         try {

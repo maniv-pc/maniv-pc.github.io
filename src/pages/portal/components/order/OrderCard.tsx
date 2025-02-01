@@ -230,7 +230,8 @@ export const OrderCard: React.FC<OrderCardProps> = ({
                 {effectivePreferences?.parts_source && effectivePreferences.parts_source.length > 0 && (
                     <div className="text-sm text-gray-400 mt-1">
                         מקורות מועדפים: {effectivePreferences.parts_source.map((source, index) => (
-                            <React.Fragment key={source.id}>
+                            // Add a more unique key using source.id and index as fallback
+                            <React.Fragment key={source.id || `source-${index}`}>
                                 {index > 0 && ", "}
                                 <a 
                                     href={source.url} 
